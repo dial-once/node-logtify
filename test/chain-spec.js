@@ -13,6 +13,20 @@ describe('Logger chain ', () => {
     delete require.cache[require.resolve(modulePath)];
   });
 
+  before(() => {
+    this.NODE_ENV = process.env.NODE_ENV;
+    this.CONSOLE_LOGGING = process.env.CONSOLE_LOGGING;
+    this.BUGSNAG_LOGGING = process.env.BUGSNAG_LOGGING;
+    this.LOGENTRIES_LOGGING = process.env.LOGENTRIES_LOGGING;
+  });
+
+  after(() => {
+    process.env.NODE_ENV = this.NODE_ENV;
+    process.env.CONSOLE_LOGGING = this.CONSOLE_LOGGING;
+    process.env.BUGSNAG_LOGGING = this.BUGSNAG_LOGGING;
+    process.env.LOGENTRIES_LOGGING = this.LOGENTRIES_LOGGING;
+  });
+
   it('should initialize when undefined config is given ', () => {
     const logtifyInstance = logtify(undefined);
     assert(logtifyInstance);
@@ -168,6 +182,21 @@ describe('Logger chain ', () => {
 
   it('should not break down if null is logged (console logging is on)', () => {
     const { chain } = logtify({});
+    chain.log(null, null);
+  });
+
+  it('should be configured according to the preset', () => {
+    const { chain } = logtify({
+      presets: ['dial-once']
+    });
+    assert.equal(process.env.CONSOLE_LOGGING, 'true');
+    assert.equal(process.env.BUGSNAG_LOGGING, 'false');
+    assert.equal(process.env.LOGENTRIES_LOGGING, 'false');
+    process.env.NODE_ENV = 'staging';
+    logtify({ presets: ['dial-once'] });
+    assert.equal(process.env.CONSOLE_LOGGING, 'false');
+    assert.equal(process.env.BUGSNAG_LOGGING, 'true');
+    assert.equal(process.env.LOGENTRIES_LOGGING, 'true');
     chain.log(null, null);
   });
 });

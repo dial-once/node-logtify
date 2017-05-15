@@ -3,6 +3,7 @@ const Message = require('./modules/message');
 const ChainLinkUtility = require('./modules/chain-link-utility');
 const ConsoleChainLink = require('./chainLinks/console-link');
 const Winston = require('./adapters/winston');
+const presets = require('./modules/presets');
 const assert = require('assert');
 
 let instance;
@@ -189,6 +190,11 @@ module.exports = (config) => {
   // default
   const chainLinkIndex = chain.push(new ConsoleChainLink(settings, new ChainLinkUtility()));
   chain.bindAdapter('logger', new Winston(chain, chainLinkIndex));
+
+  // presets
+  if (Array.isArray(settings.presets)) {
+    presets(settings.presets);
+  }
 
   // custom
   if (Array.isArray(customChainLinks)) {
