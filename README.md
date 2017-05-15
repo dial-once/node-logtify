@@ -1,109 +1,125 @@
-# node-microservice-boot
+# Logtify
 
-[![Circle CI](https://circleci.com/gh/dial-once/node-microservice-boot/tree/develop.svg?style=shield)](https://circleci.com/gh/dial-once/node-microservice-boot)
-[![Coverage](http://badges.dialonce.io/?resource=node-microservice-boot&metrics=coverage)](http://sonar.dialonce.io/overview/coverage?id=node-microservice-boot)
-[![Sqale](http://badges.dialonce.io/?resource=node-microservice-boot&metrics=sqale_rating)](http://sonar.dialonce.io/overview/debt?id=node-microservice-boot)
+[![CircleCI](https://circleci.com/gh/dial-once/node-logtify.svg?style=svg)](https://circleci.com/gh/dial-once/node-logtify)
 
-Message log chain for @dial-once node microservices  
-requires es6
+**[ES6]** Logger based on ``Chain of Responsibility`` pattern and ``winston`` module
 
-A module is based on the ``Chain of Responsibility`` pattern along with ``Adapter`` pattern for backward compatibility.
-A module exposes a chain with some default chain links (console, logentries, bugsnag).
-Each chain is an atomic separate plugin to process a message in it's own way, which is:
-- console -> print out to std.out with winston
-- logentries -> print out to logentries endpoint
-- bugsnag -> notify to bugsnag
 
 ## Installing the module
 ```bash
-npm i @dialonce/boot
+npm i @dialonce/logtify
 ```
 
-## Using it
-Require it as the first instruction (after env vars are set)
+This module is an implementation of a chain, where each element is a small submodule, that does it's own small work with the same identical incoming data. ``Console`` chain element is available by default.
+
+Each chain element contains a ``nextChainLink`` property, which is a link to the next element of the chain. It also has a ``handle`` function, which accepts ``Message`` - a **frozen** message object and a ``link`` function, that is meant to set the ``nextChainLink``. A ``handle`` function processes the message and eventually passes is further along the chain to the next element (if exists).
+
+If needed, new chain links and adapters can be added to the chain.
+
+## Configuration
+### Minimal
+Basic usage exposes the chain and a winston adapter ``logger``:
 ```js
-require('@dialonce/boot')({
-    LOGS_TOKEN: '', // logentries token
-    BUGS_TOKEN: '', // bugsnag token
-    MIN_LOG_LEVEL: '',  // minimal log level to process a message
-    DEFAULT_LOG_LEVEL: '', // default log level for message if not given
-    MIN_LOG_LEVEL_CONSOLE: '', // minimal log level to process a message by console logger chain link
-    MIN_LOG_LEVEL_LOGENTRIES: '', // minimal log level to process a message by logentries logger chain link
-    CONSOLE_LOGGING: true || false, // switch on / off console logger chain link
-    LOGENTRIES_LOGGING: true || false, // switch on / off logentries logger chain link
-    BUGSNAG_LOGGING: true || false // switch on / off bugsnag logger chain link
+const { chain, logger } = require('@dialonce/logtify')();
+```
+### Parameters
+You can configure the chain by passing the following parameters or setting up the environment variables. Such settings will be passed to each chain element sequentially:
+```js
+const { chain, logger } = require('@dialonce/logtify')({
+    CONSOLE_LOGGING: true, // switches on the console link chain
+    MIN_LOG_LEVEL: 'info' // minimal message level to be logged
+});
+```
+**NOTE!** Environment variables have a higher priority over the settings object
+
+### Add new chain element
+By default, logtify contains only 1 chain link - `Console` chain link. However, you can add new chain links as the following:
+```js
+const { LogentriesChainLink } = require('@dialonce/logtify-logentries');
+const { BugsnagChainLink } = require('@dialonce/logtify-bugsnag');
+const { chain, logger } = require('@dialonce/logtify')({
+    LOGENTRIES_LOGGING: false, // switch off the Logentries chain element
+    BUGSNAG_LOGGING: true // switch on the Bugsnag chain element
+    chainLinks: [LogentriesChainLink, BugsnagChainLink]
 });
 ```
 
-
-
-## Using logger/reporter
-You can use the logger/reporter directly from the module, without including the deps in your project. This will allow us to update/switch providers easily.
-
+### Preconfigure chain element
+If you need to preconfigure the chain link before adding it to the chain, you can do it like this:
 ```js
-const { chain, logger, notifier } = require('@dialonce/boot')();
+const { chain, logger } = require('@dialonce/logtify')({
+    chainLinks: [
+        require('@dialonce/logtify-logentries')({ LOGS_TOKEN: 'YOUR_LOGENTRIES_TOKEN' }),
+        require('@dialonce/logtify-bugsnag')({ BUGS_TOKEN: 'YOUR_BUGSNAG_TOKEN' })
+    ]
+});
 ```
 
-*Please note that these instructions will print an error if the module has not been initialised before*
-
-A ``chain`` object is an instance of a ``LoggerChain`` class, which implements a Chain of Responsibility pattern, while ``logger`` and ``notifier`` are adapters to make the resulting interface more user friendly.
-
-**NOTE!** If you use ``chain.log()`` function, your message will travel along the chain and each chain link will process it.
-``logger`` is a class, used to provide the same interface as ``winston`` package does. Although, it still sends a message to the ``chain.log`` function internally.
-
-However, a ``notifier`` is a single node, which will process the message outside the chain.
-
-This decision was made out of the idea that ``notifier`` might be used in some situations when you just want an error to be sent to bugsnag omitting all the other chains.
-
-In a general case, you might want to use a ``logger`` or a ``chain`` objects.
-
-### Interface
-
-**Logger** exposes the following set of data:
+### Add adapter
+``@dialonce/logtify-bugsnag`` provides access to the Bugsnag adapter:
 ```js
-// logging functions
-logger.silly(message, ...metadata);
-logger.verbose(message, ...metadata);
-logger.debug(message, ...metadata);
-logger.info(message, ...metadata);
-logger.warn(message, ...metadata);
-logger.error(message, ...metadata);
-logger.log(logLevel, message, ...metadata);
+const { BugsnagAdapter } = require('@dialonce/logtify-bugsnag');
+const { chain, logger, notifier } = require('@dialonce/logtify')({
+    adapters: { notifier: BugsnagAdapter }
+});
+```
+As you can see, adapter property name is the key under which this adapter will be accessed when referencing the module
 
-// profiling function
-logger.profile(label);
+### Manual config
+You can also set up chain links and adapters manually, as the following:
+```js
+const { BugsnagAdapter, BugsnagChainLink } = require('@dialonce/logtify-bugsnag');
+const { chain } = require('@dialonce/logtify')();
+chain.push(new BugsnagChainLink(chain.settings));
+
+// Adding an adapter
+chain.bindAdapter('notifier', new BugsnagAdapter(chain, chain.settings));
+```
+
+### Logger (Winston adapter) usage:
+You might be using this module most of the time
+```js
+const { logger } = require('@dialonce/logtify')();
+
+logger.silly('Hello world');
+logger.verbose('Hello world');
+logger.debug('Hello world');
+logger.info('Hello world');
+logger.warn('Hello world', { your: 'metadata' }, { at: 'the end' });
+logger.error(new Error('Hello world'));
+logger.log('info', 'Hello world');
+
+logger.profile('label');
+
+logger.chain // access to chain
+```
+
+### Chain Usage:
+```js
+// Functions
+const { chain } = require('@dialonce/logtify')();
+chain.log('warn', 'Hello world', { metadata: 'Something' });
+chain.link() // re-connect the chain
+chain.bindAdapter('name', obj) // add adapter
+chain.unbindAdapter('name') // remove adapter
+chain.push(obj) // add chain link
 
 // properties
-logger.loggerChain; // instance of a logger chain
+chain.chainStart;
+chain.chainEnd;
+chain.settings;
+chain.chainLinks;
+chain.isConnected;
+chain.adapters;
+
+// classes
+chain.Message;
+chain.Utility;
 ```
-
-**Notifier** exposes:
-```js
-// function
-notifier.notify(message, ...metadata);
-
-// property
-notifier.settings // configuration object
-notifier.requestHandler // standard bugsnag requestHandler middleware
-```
-
-**Chain** exposes:
-```js
-// functions
-chain.log(logLevel, message, ...metadata);
-
-//properties
-chain.settings; // configuration object
-chain.bugsnagChain; // Bugsnag chain link
-chain.logentriesChain; // Logentries chain link
-chain.consoleChain; // Console chain link
-chain.chainStart; // first chain link (console by default)
-chain.chainEnd; // last chain link (bugsnag by default)
-chain.ChainLink; // ChainLink class - used to create a custom chainLink
-```
+### Interface
 
 ### Internal implementation details
-Firstly, you call any of the either ``logger`` or ``notifier`` or ``chain`` function.
+Firstly, you call any logging function from either ``logger`` or ``chain``.
 
 Then provided data is then converted into a ``frozen`` (``Object.freeze()``) message package object:
 
@@ -125,42 +141,20 @@ Such message structure travels from start to the end of the chain.
 
 Each chain link receives identical copy of a message and does not modify it in any way.
 
-By default, if message level is ``warn`` or ``error``, it will be processed by bugsnag chain (if turned on) and notify to bugsnag. In order to block it for a certain messae, include ``{ notify: false }`` as a metadata:
-```js
-// either via bugsnag adapter
-notifier.notify('Hello world', { notify: false });
-// or via winston adapter
-logger.warn('Hello world', { notify: false });
-// or directly via a chain
-chain.log('warn', 'Hello world', { notify: false });
-```
 ## Tweaking
 As mentioned, a module can be configured with either a settings object or env variables.
 
 A chain link will process a message if all the 3 steps are done:
-* A chain is configured and ready
-* A chain will be used
+* A chain link is configured and ready
+* A chain link will be used
 * A message is present
 
 Let's take a look at each chain separately:
 
-### Console
 Default:
-* A chain is always ready
-* A chain will be used if ``CONSOLE_LOGGING='true'`` either as an env var or a property in the settings object
+* A Console chain is always ready
+* A Console chain will be used if ``CONSOLE_LOGGING='true'`` either as an env var or a property in the settings object
 * A message will be sent if ``message.level`` >= ``MIN_LOG_LEVEL_CONSOLE || MIN_LOG_LEVEL`` (env or settings prop)
-
-### Logentries
-Default:
-* A chain ready if ``LOGS_TOKEN`` is present in settings
-* A chain will be used if ``LOGENTRIES_LOGGING='true'`` either as an env var or a property in the settings object
-* A message will be sent if ``message.level`` >= ``MIN_LOG_LEVEL_LOGENTRIES || MIN_LOG_LEVEL`` (env or settings prop)
-
-### Bugsnag
-Default:
-* A chain is ready if ``BUGS_TOKEN`` is present in settings
-* A chain will be used if ``BUGSNAG_LOGGING='true'``either as an env var or a property in the settings object
-* A message will be sent if ``message.level`` >= ``error`` and ``message.meta.notify=true``
 
 To change the default logic, change the values of the mentioned properties.
 
@@ -173,38 +167,22 @@ To change the default logic, change the values of the mentioned properties.
 - error -> 5
 
 ## Adding your own chain link
-Each chain link extends a ``ChainLink`` class, which contains the following data:
-```js
-// functions
-getMinLogLevel(chain) // returns {string} - global MIN_LOG_LEVEL or chain-specific (if chain={string})
-next(message) // pass a message to the next chain link
-link(chainLink) // set chainLink as a next chain link for the current one
-isReady() // returns {boolean} - if a chainLink is switched on / off (described above)
-isEnabled() // returns {boolean} - whether a chainLink is going to be used (described above)
-handle(message) // process a message and move to the next chain link
+The minimal requirements for a chain link is to have the following:
+* handle(message) function, that passes the message further after it's logic
+* link(next) function, setting the ``nextChainLink``
+* a constructor should consume ``settings`` object, which will be injected when during a link initialization
 
-// properties
-nextLink // {object} - next chain link
-settings // {object} - settings with configs for the chain
-logLevels // {object instanceof Map} - {level, priority} key-value pair
-```
-
-To add a new link to the end of the chain, do the following:
+Because of the different ways of an automatized way of adding a chainLink, a custom one has to support the following behavior:
+* To be able to automatically add a chain link without being preconfigured, it should expose a class, a constructor of which should accept a ``settings`` object
+* To be able to preconfigure the chain link (if such option is required) before automatic initialization within the chain, it should expose a wrapper function as the following:
 ```js
-const { chain } = require('@dialonce/boot')();
-class MyChainLink extends chain.ChainLink {
-    constructor(settings, nextChainLink){
-        super(nextChainLink, settings);
-    }
-    
-    handle(message) {
-        console.log(message);
+module.exports = (settings) => {
+    // some logic with the configuration
+    return {
+        class: MyChainLinkClass, // will be called with new MyChainLinkClass(config) when chain is initialized
+        config: settings
     }
 }
-
-const customChainLink = new MyChainLink(chain.settings, null);
-chain.chainEnd.link(customChainLink);
-chain.chainEnd = chain.chainEnd.nextLink;
 ```
 
 ## Prefixing
@@ -216,7 +194,7 @@ will result in:
 
 ``info: [2017-05-10T15:16:31.468Z:local:INFO:] Hello world instanceId={youtInstanceId}``
 
-You can enable/disable them with the following environment variables:
+You can enable/disable them with the following environment variables / parameters for the chain settings:
 ```
 process.env.LOG_TIMESTAMP = 'true';
 process.env.LOG_ENVIRONMENT = 'true';
@@ -233,7 +211,23 @@ And it will result in:
 
 ``info: [2017-05-10T15:16:31.468Z:local:INFO:goingCrazy] Hello world instanceId={youtInstanceId}``
 
+**Default prefix is generated by the Message object, passed into the handle(message) function**
+
+## Presets
+To make it easier to config the logger, some presets are available:
+* ``dial-once`` - enables Console chain link when ``NODE_ENV`` is either ``staging`` or ``production`` and disables it otherwise (by setting the env variables)
+* ``no-prefix`` - disables the prefix from the message (by setting the env variables)
+
+Apply a preset by passing it to the chain configs:
+```js
+const { chain } = require('@dialonce/logtify')({
+    presets: ['dial-once', 'no-prefix']
+});
+```
+
 ## Current included modules
-  - Bugsnag (bug reports)
-  - Logentries (logs)
   - Winston (logs)
+  
+## Available chain links:
+- [Logentries](https://github.com/dial-once/node-logtify-logentries)
+- [Bugsnag](https://github.com/dial-once/node-logtify-bugsnag)

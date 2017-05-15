@@ -11,9 +11,9 @@ test:
 	make cover
 
 init:
-	sed -i 's/{service-name}/node-logtify/g' package.json
-	sed -i 's/{service-name}/node-logtify/g' README.md
-	sed -i 's/{service-name}/node-logtify/g' sonar-project.properties
+	sed -i 's/node-logtify/g' package.json
+	sed -i 's/node-logtify/g' README.md
+	sed -i 's/node-logtify/g' sonar-project.properties
 
 cover:
 	node_modules/.bin/istanbul cover  node_modules/.bin/_mocha -- test --recursive --timeout=10000
@@ -27,6 +27,6 @@ ifdef CI_PULL_REQUEST
 	@sonar-scanner-2.8/bin/sonar-scanner -e -X -Dsonar.analysis.mode=preview -Dsonar.github.pullRequest=${shell basename $(CI_PULL_REQUEST)} -Dsonar.github.repository=$(REPO_SLUG) -Dsonar.github.oauth=$(GITHUB_TOKEN) -Dsonar.login=$(SONAR_LOGIN) -Dsonar.password=$(SONAR_PASS) -Dsonar.host.url=$(SONAR_HOST_URL)
 endif
 ifeq ($(CIRCLE_BRANCH),develop)
-	@sonar-scanner-2.8/bin/sonar-scanner -e -X -Dsonar.analysis.mode=publish -Dsonar.host.url=$(SONAR_HOST_URL) -Dsonar.login=$(SONAR_LOGIN) -Dsonar.password=$(SONAR_PASS)
+	@sonar-scanner-2.8/bin/sonar-runner -e -X -Dsonar.analysis.mode=publish -Dsonar.host.url=$(SONAR_HOST_URL) -Dsonar.login=$(SONAR_LOGIN) -Dsonar.password=$(SONAR_PASS)
 endif
 	rm -rf sonar-scanner-2.8 sonar-scanner-2.8.zip
