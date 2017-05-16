@@ -18,14 +18,13 @@ If needed, new chain links and adapters can be added to the chain.
 
 ## Configuration
 ### Minimal
-Basic usage exposes the chain and a winston adapter ``logger``:
 ```js
-const { chain, logger } = require('@dialonce/logtify')();
+const { logger } = require('@dialonce/logtify')();
 ```
 ### Parameters
 You can configure the chain by passing the following parameters or setting up the environment variables. Such settings will be passed to each chain element sequentially:
 ```js
-const { chain, logger } = require('@dialonce/logtify')({
+const { logger } = require('@dialonce/logtify')({
     CONSOLE_LOGGING: true, // switches on the console link chain
     MIN_LOG_LEVEL: 'info' // minimal message level to be logged
 });
@@ -37,7 +36,7 @@ By default, logtify contains only 1 chain link - `Console` chain link. However, 
 ```js
 const { LogentriesChainLink } = require('@dialonce/logtify-logentries');
 const { BugsnagChainLink } = require('@dialonce/logtify-bugsnag');
-const { chain, logger } = require('@dialonce/logtify')({
+const { logger } = require('@dialonce/logtify')({
     LOGENTRIES_LOGGING: false, // switch off the Logentries chain element
     BUGSNAG_LOGGING: true // switch on the Bugsnag chain element
     chainLinks: [LogentriesChainLink, BugsnagChainLink]
@@ -47,7 +46,7 @@ const { chain, logger } = require('@dialonce/logtify')({
 ### Preconfigure chain element
 If you need to preconfigure the chain link before adding it to the chain, you can do it like this:
 ```js
-const { chain, logger } = require('@dialonce/logtify')({
+const { logger } = require('@dialonce/logtify')({
     chainLinks: [
         require('@dialonce/logtify-logentries')({ LOGS_TOKEN: 'YOUR_LOGENTRIES_TOKEN' }),
         require('@dialonce/logtify-bugsnag')({ BUGS_TOKEN: 'YOUR_BUGSNAG_TOKEN' })
@@ -59,7 +58,7 @@ const { chain, logger } = require('@dialonce/logtify')({
 ``@dialonce/logtify-bugsnag`` provides access to the Bugsnag adapter:
 ```js
 const { BugsnagAdapter } = require('@dialonce/logtify-bugsnag');
-const { chain, logger, notifier } = require('@dialonce/logtify')({
+const { logger, notifier } = require('@dialonce/logtify')({
     adapters: { notifier: BugsnagAdapter }
 });
 ```
@@ -121,7 +120,7 @@ chain.Utility;
 ### Internal implementation details
 Firstly, you call any logging function from either ``logger`` or ``chain``.
 
-Then provided data is then converted into a ``frozen`` (``Object.freeze()``) message package object:
+Then provided data is then converted into a [frozen](https://www.npmjs.com/package/deep-freeze) message package object:
 
 ```js
 // if text message
@@ -133,7 +132,8 @@ Then provided data is then converted into a ``frozen`` (``Object.freeze()``) mes
     notify: {true}, // by default,
     stack: {string}, // in case error was given to log,
     ... (other metadata provided in runtime)
-  }
+  },
+  error: {Error} // in case message type is Error
 }
 ```
 
@@ -165,6 +165,8 @@ To change the default logic, change the values of the mentioned properties.
 - info -> 3
 - warn -> 4
 - error -> 5
+
+These values can be found withint a ``message`` object, that is passed into a ``handle (message)``  function
 
 ## Adding your own chain link
 The minimal requirements for a chain link is to have the following:
@@ -215,12 +217,13 @@ And it will result in:
 
 ## Presets
 To make it easier to config the logger, some presets are available:
-* ``dial-once`` - enables Console chain link when ``NODE_ENV`` is either ``staging`` or ``production`` and disables it otherwise (by setting the env variables)
-* ``no-prefix`` - disables the prefix from the message (by setting the env variables)
+* ``dial-once`` - enables Console chain link when ``NODE_ENV`` is either ``staging`` or ``production`` and disables it otherwise
+* ``no-prefix`` - disables the prefix from the message
+* ``prefix`` - enables the prefix in the message
 
 Apply a preset by passing it to the chain configs:
 ```js
-const { chain } = require('@dialonce/logtify')({
+const { chain, logger } = require('@dialonce/logtify')({
     presets: ['dial-once', 'no-prefix']
 });
 ```

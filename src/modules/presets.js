@@ -1,23 +1,37 @@
+function configPrefix(include) {
+  return {
+    LOG_TIMESTAMP: include,
+    LOG_ENVIRONMENT: include,
+    LOG_LEVEL: include,
+    LOG_REQID: include
+  };
+}
+
 function applyPreset(preset) {
-  const result = {};
+  let result = {};
   switch (preset) {
     case 'dial-once': {
       if (['staging', 'production'].includes(process.env.NODE_ENV)) {
-        process.env.CONSOLE_LOGGING = 'false';
-        process.env.LOGENTRIES_LOGGING = 'true';
-        process.env.BUGSNAG_LOGGING = 'true';
+        result = {
+          CONSOLE_LOGGING: false,
+          LOGENTRIES_LOGGING: true,
+          BUGSNAG_LOGGING: true
+        };
       } else {
-        process.env.CONSOLE_LOGGING = 'true';
-        process.env.LOGENTRIES_LOGGING = 'false';
-        process.env.BUGSNAG_LOGGING = 'false';
+        result = {
+          CONSOLE_LOGGING: true,
+          LOGENTRIES_LOGGING: false,
+          BUGSNAG_LOGGING: false
+        };
       }
       break;
     }
     case 'no-prefix': {
-      process.env.LOG_TIMESTAMP = 'false';
-      process.env.LOG_ENVIRONMENT = 'false';
-      process.env.LOG_LEVEL = 'false';
-      process.env.LOG_REQID = 'false';
+      result = configPrefix(false);
+      break;
+    }
+    case 'prefix': {
+      result = configPrefix(true);
       break;
     } default: {
       break;
@@ -27,7 +41,9 @@ function applyPreset(preset) {
 }
 
 module.exports = (presets = []) => {
+  const presetConfigs = {};
   for (const preset of presets) {
-    applyPreset(preset);
+    Object.assign(presetConfigs, applyPreset(preset));
   }
+  return presetConfigs;
 };

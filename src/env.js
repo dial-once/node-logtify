@@ -1,15 +1,5 @@
 const DEFAULT_INSTANCE_ID = 1;
 
-if (process.env.NODE_ENV !== 'production') {
-  process.env.CONSOLE_LOGGING = 'true';
-}
-
-process.env.MIN_LOG_LEVEL = 'info';
-process.env.LOG_TIMESTAMP = 'true';
-process.env.LOG_ENVIRONMENT = 'true';
-process.env.LOG_LEVEL = 'true';
-process.env.LOG_REQID = 'true';
-
 if (!process.env.HOSTNAME) {
   process.env.HOSTNAME = process.env.USER;
   process.env.INSTANCE_NUMBER = 0;

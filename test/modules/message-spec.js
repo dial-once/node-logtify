@@ -40,6 +40,7 @@ describe('Message class test', () => {
       assert.equal(message.payload.meta.stack, error.stack);
       assert.equal(message.payload.meta.notify, true);
       assert.equal(message.payload.meta.instanceId, process.env.HOSTNAME);
+      assert(message.payload.error instanceof Error);
     });
 
     it('should set log level to default if non given [env]', () => {

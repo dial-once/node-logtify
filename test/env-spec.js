@@ -8,10 +8,10 @@ describe('env checks', () => {
   const prevUser = process.env.USER;
 
   afterEach(() => {
+    // removing the module copy from the require's cache to be able to import it from scratch again
     delete require.cache[require.resolve(modulePath)];
     process.env.HOSTNAME = prevHostname;
     process.env.USER = prevUser;
-    process.env.CONSOLE_LOGGING = '';
   });
 
   beforeEach(() => {
@@ -41,22 +41,5 @@ describe('env checks', () => {
     require(modulePath);
 
     assert.equal(process.env.INSTANCE_NUMBER, '3');
-  });
-
-  it('should set CONSOLE_LOGGING to false if NODE_ENV is production', () => {
-    process.env.NODE_ENV = 'production';
-
-    require(modulePath);
-
-    assert.equal(process.env.CONSOLE_LOGGING, '');
-  });
-
-  it('should not set CONSOLE_LOGGING to true if NODE_ENV is not production', () => {
-    process.env.NODE_ENV = 'test';
-    process.env.CONSOLE_LOGGING = '';
-
-    require(modulePath);
-
-    assert.equal(process.env.CONSOLE_LOGGING, 'true');
   });
 });

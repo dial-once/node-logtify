@@ -22,6 +22,7 @@ class Message {
     if (message instanceof Error) {
       this.payload.text = message.message || 'Error: ';
       this.payload.meta.stack = message.stack;
+      this.payload.error = message;
     }
     // all metas are included as message meta
     if (metas.length > 0) {

@@ -3,7 +3,7 @@ const Message = require('./modules/message');
 const ChainLinkUtility = require('./modules/chain-link-utility');
 const ConsoleChainLink = require('./chainLinks/console-link');
 const Winston = require('./adapters/winston');
-const presets = require('./modules/presets');
+const preset = require('./modules/presets');
 const assert = require('assert');
 
 let instance;
@@ -174,7 +174,7 @@ class LoggerChain {
 module.exports = (config) => {
   if (!config) {
     if (instance) return instance;
-    console.error('Logtify should be initilised before used without config.');
+    console.warn('Logtify should be initilised before used without config.');
   }
   const settings = Object.assign({}, config);
 
@@ -187,27 +187,25 @@ module.exports = (config) => {
   const chain = new LoggerChain(settings);
   instance = { chain };
 
+  // presets
+  if (Array.isArray(settings.presets)) {
+    Object.assign(settings, preset(settings.presets));
+  }
+
   // default
   const chainLinkIndex = chain.push(new ConsoleChainLink(settings, new ChainLinkUtility()));
   chain.bindAdapter('logger', new Winston(chain, chainLinkIndex));
 
-  // presets
-  if (Array.isArray(settings.presets)) {
-    presets(settings.presets);
-  }
-
   // custom
   if (Array.isArray(customChainLinks)) {
     for (const CustomChainLink of customChainLinks) {
-      if (![null, undefined].includes(CustomChainLink)) {
-        // if constructor
-        if (typeof CustomChainLink === 'function') {
-          chain.push(new CustomChainLink(settings, new ChainLinkUtility()));
-        } else if (typeof CustomChainLink === 'object') {
-          const chainLinkConfig = CustomChainLink.config || settings;
-          const ChainLinkClass = CustomChainLink.class;
-          chain.push(new ChainLinkClass(chainLinkConfig, new ChainLinkUtility()));
-        }
+      // if constructor
+      if (typeof CustomChainLink === 'function') {
+        chain.push(new CustomChainLink(settings, new ChainLinkUtility()));
+      } else if (CustomChainLink !== null && typeof CustomChainLink === 'object') {
+        const chainLinkConfig = CustomChainLink.config || settings;
+        const ChainLinkClass = CustomChainLink.class;
+        chain.push(new ChainLinkClass(chainLinkConfig, new ChainLinkUtility()));
       }
     }
   }

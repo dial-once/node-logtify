@@ -18,7 +18,7 @@ describe('entry point', () => {
   });
 
   it('should execute without an exception (no params) but print a warning message', () => {
-    const spy = sinon.spy(console, 'error');
+    const spy = sinon.spy(console, 'warn');
     require(modulePath)();
     assert(spy.calledWith('Logtify should be initilised before used without config.'));
   });

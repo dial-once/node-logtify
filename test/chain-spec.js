@@ -186,17 +186,17 @@ describe('Logger chain ', () => {
   });
 
   it('should be configured according to the preset', () => {
-    const { chain } = logtify({
+    let chain = logtify({
       presets: ['dial-once']
-    });
-    assert.equal(process.env.CONSOLE_LOGGING, 'true');
-    assert.equal(process.env.BUGSNAG_LOGGING, 'false');
-    assert.equal(process.env.LOGENTRIES_LOGGING, 'false');
+    }).chain;
+    assert.equal(chain.settings.CONSOLE_LOGGING, true);
+    assert.equal(chain.settings.BUGSNAG_LOGGING, false);
+    assert.equal(chain.settings.LOGENTRIES_LOGGING, false);
     process.env.NODE_ENV = 'staging';
-    logtify({ presets: ['dial-once'] });
-    assert.equal(process.env.CONSOLE_LOGGING, 'false');
-    assert.equal(process.env.BUGSNAG_LOGGING, 'true');
-    assert.equal(process.env.LOGENTRIES_LOGGING, 'true');
+    chain = logtify({ presets: ['dial-once'] }).chain;
+    assert.equal(chain.settings.CONSOLE_LOGGING, false);
+    assert.equal(chain.settings.BUGSNAG_LOGGING, true);
+    assert.equal(chain.settings.LOGENTRIES_LOGGING, true);
     chain.log(null, null);
   });
 });
