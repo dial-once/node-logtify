@@ -181,22 +181,26 @@ describe('Logger chain ', () => {
   });
 
   it('should not break down if null is logged (console logging is on)', () => {
-    const { chain } = logtify({});
+    const { chain, logger } = logtify({});
     chain.log(null, null);
+    assert(logger);
   });
 
   it('should be configured according to the preset', () => {
-    let chain = logtify({
-      presets: ['dial-once']
-    }).chain;
-    assert.equal(chain.settings.CONSOLE_LOGGING, true);
-    assert.equal(chain.settings.BUGSNAG_LOGGING, false);
-    assert.equal(chain.settings.LOGENTRIES_LOGGING, false);
+    const chain1 = logtify({ presets: ['dial-once'] }).chain;
+    assert.equal(chain1.settings.CONSOLE_LOGGING, true);
+    assert.equal(chain1.settings.BUGSNAG_LOGGING, false);
+    assert.equal(chain1.settings.LOGENTRIES_LOGGING, false);
     process.env.NODE_ENV = 'staging';
-    chain = logtify({ presets: ['dial-once'] }).chain;
+    const { chain, logger, notifier } = logtify({ presets: ['dial-once'] });
     assert.equal(chain.settings.CONSOLE_LOGGING, false);
     assert.equal(chain.settings.BUGSNAG_LOGGING, true);
     assert.equal(chain.settings.LOGENTRIES_LOGGING, true);
+    assert.equal(chain.chainLinks.length, 3);
+    assert(logger);
+    assert(notifier);
+    assert(logger.info);
+    assert(notifier.notify);
     chain.log(null, null);
   });
 });

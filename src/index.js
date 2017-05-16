@@ -22,9 +22,10 @@ let instance;
     meta: {
       instanceId: {string},
       notify: {true}, // by default,
-      stack: {string}, // in case message was given to log,
+      stack: {string}, // in case error was given to log,
       ... (other metadata provided in runtime)
-    }
+    },
+    error: {Error} // in case a message was an error
   }
   Such message package object is frozen, meaning that it can not be modified.
   This is encouraged to make sure each chain link receives identical structure of the message
@@ -45,14 +46,14 @@ class LoggerChain {
 
     Instance of a LoggerChain exposes:
     - settings object
-    - ChainLink class - an base class for each chain link (encouraged to use)
+    - Utility class - common rules for each chain link
     - Message class - packs parameters into a frozen message package
     - chainLinks - Array of active chainLinks
     - chainStart and chainEnd
     - isConnected - whether each chain link is lined to a next one
+    - adapters {Map} - {string} - {Object} entries of adapter names and objects
 
     New chain element can be added in runtime as the following:
-    const chainLinkImpl = new ChainLink();
     const index = chain.push(chainLinkImpl); // index of your chainLink in the array
 
     New adapter can be added in runtime as the following:
@@ -178,38 +179,65 @@ module.exports = (config) => {
   }
   const settings = Object.assign({}, config);
 
-  const customChainLinks = settings.chainLinks;
-  const adapters = settings.adapters;
-
-  delete settings.chainLinks;
-  delete settings.adapters;
-
   const chain = new LoggerChain(settings);
   instance = { chain };
 
+  let chainLinks;
+  let adapters;
+
   // presets
   if (Array.isArray(settings.presets)) {
-    Object.assign(settings, preset(settings.presets));
+    // a whole settings object is passed to initialize the chain links (if wrapped into a function)
+    const presetConfigs = preset(settings);
+    const presetsChainLinks = presetConfigs.chainLinks || [];
+    const presetsAdapters = presetConfigs.adapters || {};
+    // concatenating given (settings) chainLinks with those, added based on presets
+    chainLinks = Array.isArray(settings.chainLinks) ? settings.chainLinks.concat(presetsChainLinks) : presetsChainLinks;
+
+    // same for adapters. Copying to empty object, because settings.adapters can be null/undefined
+    adapters = Object.assign({}, settings.adapters, presetsAdapters);
+    // removing to avoid overwriting
+    delete presetConfigs.chainLinks;
+    delete presetConfigs.adapters;
+    // merging other preset-given configs
+    Object.assign(settings, presetConfigs);
+    chain.settings = settings;
+  } else {
+    chainLinks = settings.chainLinks;
+    adapters = settings.adapters;
   }
+
+  delete settings.chainLinks;
+  delete settings.adapters;
 
   // default
   const chainLinkIndex = chain.push(new ConsoleChainLink(settings, new ChainLinkUtility()));
   chain.bindAdapter('logger', new Winston(chain, chainLinkIndex));
 
-  // custom
-  if (Array.isArray(customChainLinks)) {
-    for (const CustomChainLink of customChainLinks) {
-      // if constructor
+  /*
+    Custom:
+    chainLinks
+  */
+  if (Array.isArray(chainLinks)) {
+    for (const CustomChainLink of chainLinks) {
+      // if constructor passed in the array
       if (typeof CustomChainLink === 'function') {
         chain.push(new CustomChainLink(settings, new ChainLinkUtility()));
+        // if a pre-configured object
       } else if (CustomChainLink !== null && typeof CustomChainLink === 'object') {
-        const chainLinkConfig = CustomChainLink.config || settings;
+        const chainLinkConfig = Object.assign({}, CustomChainLink.config, settings);
         const ChainLinkClass = CustomChainLink.class;
         chain.push(new ChainLinkClass(chainLinkConfig, new ChainLinkUtility()));
+        // if a pre-configured object also exposes adapter
+        if (CustomChainLink.adapter !== null && typeof CustomChainLink.adapter === 'object') {
+          const adapter = CustomChainLink.adapter;
+          adapters = Object.assign({}, adapters, { [adapter.name]: adapter.class });
+        }
       }
     }
   }
 
+  // adapter key-value objects: { name -> constructor  }
   if (adapters !== null && typeof adapters === 'object') {
     for (const adapterName of Object.keys(adapters)) {
       chain.bindAdapter(adapterName, new adapters[adapterName](chain, settings));

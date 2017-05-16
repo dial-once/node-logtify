@@ -6,6 +6,7 @@ const modulePath = '../src/index';
 /* eslint-disable global-require, import/no-dynamic-require, no-console */
 describe('entry point', () => {
   beforeEach(() => {
+    // removing the module copy from the require's cache to be able to import it from scratch again
     delete require.cache[require.resolve(modulePath)];
   });
 

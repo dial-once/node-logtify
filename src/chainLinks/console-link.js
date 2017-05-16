@@ -26,7 +26,6 @@ class ConsoleLink {
     this.winston = new winston.Logger();
     this.winston.add(winston.transports.Console);
     this.utility = utility;
-    this.winston.level = 'silly';
     this.name = 'CONSOLE';
   }
 

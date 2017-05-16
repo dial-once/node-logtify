@@ -4,6 +4,7 @@
 
 **[ES6]** Logger based on ``Chain of Responsibility`` pattern and ``winston`` module
 
+### [Dev Tips](https://github.com/dial-once/node-logtify/wiki)
 
 ## Installing the module
 ```bash
@@ -182,7 +183,12 @@ module.exports = (settings) => {
     // some logic with the configuration
     return {
         class: MyChainLinkClass, // will be called with new MyChainLinkClass(config) when chain is initialized
-        config: settings
+        config: settings,
+        adapter: { // optional. If given, will auto init adapter when chainLink is initialized
+          name: {string},
+          class: MyChainLinkAdapterClass
+        }
+      }
     }
 }
 ```
@@ -218,6 +224,13 @@ And it will result in:
 ## Presets
 To make it easier to config the logger, some presets are available:
 * ``dial-once`` - enables Console chain link when ``NODE_ENV`` is either ``staging`` or ``production`` and disables it otherwise
+
+Initializes [Logentries Chain Link](https://github.com/dial-once/node-logtify-logentries)
+
+Initializes [Bugsnag Chain Link](https://github.com/dial-once/node-logtify-bugsnag)
+```js
+const { chain, logger, notifier } = require('logtify')({ presets: ['dial-once'] });
+```
 * ``no-prefix`` - disables the prefix from the message
 * ``prefix`` - enables the prefix in the message
 
@@ -229,8 +242,12 @@ const { chain, logger } = require('@dialonce/logtify')({
 ```
 
 ## Current included modules
-  - Winston (logs)
+- Winston (logs)
+- [deep-freeze](https://www.npmjs.com/package/deep-freeze)
+- [Logentries Chain Link](https://github.com/dial-once/node-logtify-logentries)
+- [Bugsnag Chain Link](https://github.com/dial-once/node-logtify-bugsnag)
   
-## Available chain links:
-- [Logentries](https://github.com/dial-once/node-logtify-logentries)
-- [Bugsnag](https://github.com/dial-once/node-logtify-bugsnag)
+## Existing chain links:
+- Console chain link (part of this project)
+- [Logentries Chain Link](https://github.com/dial-once/node-logtify-logentries)
+- [Bugsnag Chain Link](https://github.com/dial-once/node-logtify-bugsnag)

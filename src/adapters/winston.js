@@ -21,8 +21,8 @@ class Winston {
     Construct the instance of a winston adapter
     Create main logging functions
     Each function has the following arguments:
-    @param message {string|Error} - a message / error to log
-    @param args {Object} - message metadata
+    @param chain {object} - an instance of a chain
+    @param chainLinkIndex {number} - index of a chain link this adapter is for
   **/
   constructor(chain, chainLinkIndex = -1) {
     assert(chain);
@@ -56,7 +56,7 @@ class Winston {
   /**
     @function profile
     Fire a winston's implementation of a profiling function
-    @param message {string} - a unique profiling label
+    @param label {string} - a unique profiling label
   **/
   profile(label) {
     const winston = this.chain.chainLinks[this.chainLinkIndex].winston;

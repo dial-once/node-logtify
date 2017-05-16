@@ -39,11 +39,11 @@ class Message {
     - LOG_TIMESTAMP {'true'|'false'} - include timestamp ISO string into a message prefix
     - LOG_ENVIRONMENT {'true'|'false'} - include current environment into a message prefix
     - LOG_LEVEL {'true'|'false'} - include log level in UPPERCASE into a message prefix
-    - LOG_REQID {'true'|'false'} - incldue a reqId into a messae prefix
+    - LOG_REQID {'true'|'false'} - incldue a reqId into a message prefix
 
     reqId will be included only if provided in the message meta
 
-    @param settings {Object} - chain settings. Fallsa back to {} if not given
+    @param settings {Object} - chain settings. Falls back to {} if not given
     @param delimiter {string} - a character to split prefix parts. Falls back to ':'
     @return {string} - Prefix for the log message. Or an empty string of no prefix data logging is enabled
   **/
