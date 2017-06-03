@@ -21,8 +21,6 @@
   "homepage": "https://github.com/dial-once/node-logtify#readme",
   "dependencies": {
     "deep-freeze": "0.0.1",
-    "logtify-bugsnag": "file:///Users/macbook/Programming/JS/node-logtify-bugsnag",
-    "logtify-logentries": "file:///Users/macbook/Programming/JS/node-logtify-logentries",
     "winston": "^2.2.0"
   },
   "devDependencies": {

@@ -5,15 +5,19 @@ const WinstonAdapter = require('./../src/adapters/winston');
 const assert = require('assert');
 
 describe('Logger chain ', () => {
-  before(() => {
-    assert.equal(typeof logtify, 'function');
-  });
-
   beforeEach(() => {
     delete require.cache[require.resolve(modulePath)];
   });
 
+  afterEach(() => {
+    delete require.cache[require.resolve(modulePath)];
+    const { chainBuffer } = logtify;
+    chainBuffer.adapters = {};
+    chainBuffer.chainLinks = [];
+  });
+
   before(() => {
+    assert.equal(typeof logtify, 'function');
     this.NODE_ENV = process.env.NODE_ENV;
     this.CONSOLE_LOGGING = process.env.CONSOLE_LOGGING;
     this.BUGSNAG_LOGGING = process.env.BUGSNAG_LOGGING;
@@ -37,7 +41,7 @@ describe('Logger chain ', () => {
     assert.equal(typeof chain.chainEnd, 'object');
     assert.equal(typeof chain.chainLinks, 'object');
     assert.equal(typeof chain.Message, 'function');
-    assert.equal(typeof chain.Utility, 'function');
+    assert.equal(typeof chain.ChainLink, 'function');
     assert.equal(typeof chain.log, 'function');
   });
 
@@ -51,7 +55,7 @@ describe('Logger chain ', () => {
     assert.equal(typeof chain.chainEnd, 'object');
     assert.equal(typeof chain.chainLinks, 'object');
     assert.equal(typeof chain.Message, 'function');
-    assert.equal(typeof chain.Utility, 'function');
+    assert.equal(typeof chain.ChainLink, 'function');
     assert.equal(typeof chain.log, 'function');
   });
 
@@ -64,7 +68,7 @@ describe('Logger chain ', () => {
     assert.equal(typeof chain.chainEnd, 'object');
     assert.equal(typeof chain.chainLinks, 'object');
     assert.equal(typeof chain.Message, 'function');
-    assert.equal(typeof chain.Utility, 'function');
+    assert.equal(typeof chain.ChainLink, 'function');
     assert.equal(typeof chain.log, 'function');
   });
 
@@ -86,13 +90,14 @@ describe('Logger chain ', () => {
   });
 
   it('should support custom chainLinks', () => {
-    const { chain, logger, unicorn } = logtify({
-      chainLinks: [ConsoleChainLink, ConsoleChainLink, ConsoleChainLink],
-      adapters: {
-        logger: WinstonAdapter,
-        unicorn: WinstonAdapter
-      }
+    const { chainBuffer } = logtify;
+    chainBuffer.addAdapter({
+      unicorn: WinstonAdapter
     });
+    chainBuffer.addChainLink(ConsoleChainLink);
+    chainBuffer.addChainLink(ConsoleChainLink);
+    chainBuffer.addChainLink(ConsoleChainLink);
+    const { chain, logger, unicorn } = logtify({});
     assert(chain);
     assert(logger);
     assert(unicorn);
@@ -100,28 +105,30 @@ describe('Logger chain ', () => {
   });
 
   it('should not let adapters override existing ones', () => {
-    const { chain, logger, unicorn } = logtify({
-      chainLinks: [ConsoleChainLink, ConsoleChainLink, ConsoleChainLink],
-      adapters: {
-        chain: WinstonAdapter,
-        unicorn: WinstonAdapter
-      }
+    const { chainBuffer } = logtify;
+    chainBuffer.addAdapter({
+      name: 'chain',
+      class: WinstonAdapter
     });
+    chainBuffer.addAdapter({
+      unicorn: WinstonAdapter
+    });
+    const { chain, logger, unicorn } = logtify({});
     assert(chain);
     assert(Array.isArray(chain.chainLinks));
     assert(logger);
     assert(unicorn);
-    assert.equal(chain.chainLinks.length, 4);
   });
 
   it('should be able to unbind adapter', () => {
-    let { chain, unicorn } = logtify({
-      chainLinks: [ConsoleChainLink, ConsoleChainLink, ConsoleChainLink],
-      adapters: {
-        chain: WinstonAdapter,
-        unicorn: WinstonAdapter
-      }
+    const { chainBuffer } = logtify;
+    chainBuffer.addAdapter({
+      chain: WinstonAdapter
     });
+    chainBuffer.addAdapter({
+      unicorn: WinstonAdapter
+    });
+    let { chain, unicorn } = logtify({});
     assert(chain);
     assert(Array.isArray(chain.chainLinks));
     assert(unicorn);
@@ -133,10 +140,7 @@ describe('Logger chain ', () => {
   });
 
   it('should not be able to unbind non adapter object', () => {
-    const { chain } = logtify({
-      chainLinks: [ConsoleChainLink, ConsoleChainLink, ConsoleChainLink],
-      adapters: {}
-    });
+    const { chain } = logtify({});
     assert(chain);
     assert(Array.isArray(chain.chainLinks));
     chain.unbindAdapter('chain');
@@ -145,15 +149,18 @@ describe('Logger chain ', () => {
   });
 
   it('should skip null undefined or empty object chainLink', () => {
-    const { chain } = logtify({
-      chainLinks: [null, undefined]
-    });
+    const { chainBuffer } = logtify;
+    chainBuffer.addChainLink(null);
+    chainBuffer.addChainLink(undefined);
+    const { chain } = logtify({});
     assert.equal(chain.chainLinks.length, 1);
   });
 
   it('should throw if chainLink is not valid', () => {
     try {
-      logtify({ chainLinks: [{ handle: () => {} }] });
+      const { chainBuffer } = logtify;
+      chainBuffer.addChainLink({ handle: () => {} });
+      logtify({});
     } catch (e) {
       assert(e instanceof Error);
     }
@@ -171,9 +178,9 @@ describe('Logger chain ', () => {
     }
 
     const settings = { SOME_SECRET: 'powerpuffgirls' };
-    const { chain } = logtify({
-      chainLinks: [{ config: settings, class: MyChainLink }]
-    });
+    const { chainBuffer } = logtify;
+    chainBuffer.addChainLink({ config: settings, class: MyChainLink });
+    const { chain } = logtify({});
     assert.equal(chain.chainLinks.length, 2);
     assert.equal(typeof chain.chainEnd.handle, 'function');
     assert.equal(typeof chain.chainEnd.next, 'function');
@@ -192,15 +199,13 @@ describe('Logger chain ', () => {
     assert.equal(chain1.settings.BUGSNAG_LOGGING, false);
     assert.equal(chain1.settings.LOGENTRIES_LOGGING, false);
     process.env.NODE_ENV = 'staging';
-    const { chain, logger, notifier } = logtify({ presets: ['dial-once'] });
+    const { chain, logger } = logtify({ presets: ['dial-once'] });
     assert.equal(chain.settings.CONSOLE_LOGGING, false);
     assert.equal(chain.settings.BUGSNAG_LOGGING, true);
     assert.equal(chain.settings.LOGENTRIES_LOGGING, true);
-    assert.equal(chain.chainLinks.length, 3);
+    assert.equal(chain.chainLinks.length, 1);
     assert(logger);
-    assert(notifier);
     assert(logger.info);
-    assert(notifier.notify);
     chain.log(null, null);
   });
 });

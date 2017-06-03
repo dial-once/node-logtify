@@ -3,14 +3,6 @@ const assert = require('assert');
 const sinon = require('sinon');
 
 describe('Winston adapter ', () => {
-  before(() => {
-    this.consoleInfo = console.info;
-  });
-
-  after(() => {
-    console.info = this.consoleInfo;
-  });
-
   it('should be initialized', () => {
     const { logger } = LoggerChain();
     assert.equal(typeof logger, 'object');

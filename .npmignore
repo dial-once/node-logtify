@@ -6,6 +6,7 @@ test
 .gitignore
 .jshintignore
 .jshintrc
+.DS_STORE
 .npmignore
 Makefile
 sonar-project.properties

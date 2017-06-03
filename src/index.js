@@ -1,12 +1,14 @@
 require('./env');
 const Message = require('./modules/message');
-const ChainLinkUtility = require('./modules/chain-link-utility');
+const ChainLink = require('./modules/chain-link');
 const ConsoleChainLink = require('./chainLinks/console-link');
 const Winston = require('./adapters/winston');
+const ChainBuffer = require('./modules/chain-buffer');
 const preset = require('./modules/presets');
 const assert = require('assert');
 
 let instance;
+const buffer = new ChainBuffer();
 
 /**
   @class LoggerChain
@@ -65,7 +67,7 @@ class LoggerChain {
   constructor(settings) {
     this.settings = settings;
     this.Message = Message;
-    this.Utility = ChainLinkUtility;
+    this.ChainLink = ChainLink;
     this.chainLinks = [];
     this.chainStart = null;
     this.chainEnd = null;
@@ -112,12 +114,13 @@ class LoggerChain {
   **/
   push(chainLink) {
     assert(chainLink);
-    assert(chainLink.handle);
-    assert(chainLink.next);
-    assert(chainLink.link);
+    assert(chainLink.handle, 'Chain link must implement handle(message) function');
+    assert(chainLink.next, 'Chain link must implement next() function');
+    assert(chainLink.link, 'Chain link must implement a link(next) function');
     const index = this.chainLinks.push(chainLink) - 1;
     this.chainStart = this.chainLinks[0];
     this.chainEnd = this.chainLinks[this.chainLinks.length - 1];
+    this.link();
     return index;
   }
 
@@ -138,7 +141,7 @@ class LoggerChain {
     assert(adapterName);
     assert(adapterInstance);
     if (!this.adapters.has(adapterName) && !instance[adapterName]) {
-      this.adapters.set(adapterName, '');
+      this.adapters.set(adapterName, adapterInstance);
       instance[adapterName] = adapterInstance;
     }
   }
@@ -173,70 +176,51 @@ class LoggerChain {
  * @return {Object}  The configured providers
  */
 module.exports = (config) => {
-  if (!config) {
-    if (instance) return instance;
-    console.warn('Logtify should be initilised before used without config.');
+  if (!config && instance) {
+    return instance;
   }
+
   const settings = Object.assign({}, config);
-
-  const chain = new LoggerChain(settings);
-  instance = { chain };
-
-  let chainLinks;
-  let adapters;
 
   // presets
   if (Array.isArray(settings.presets)) {
     // a whole settings object is passed to initialize the chain links (if wrapped into a function)
     const presetConfigs = preset(settings);
-    const presetsChainLinks = presetConfigs.chainLinks || [];
-    const presetsAdapters = presetConfigs.adapters || {};
-    // concatenating given (settings) chainLinks with those, added based on presets
-    chainLinks = Array.isArray(settings.chainLinks) ? settings.chainLinks.concat(presetsChainLinks) : presetsChainLinks;
-
-    // same for adapters. Copying to empty object, because settings.adapters can be null/undefined
-    adapters = Object.assign({}, settings.adapters, presetsAdapters);
-    // removing to avoid overwriting
-    delete presetConfigs.chainLinks;
-    delete presetConfigs.adapters;
     // merging other preset-given configs
     Object.assign(settings, presetConfigs);
-    chain.settings = settings;
-  } else {
-    chainLinks = settings.chainLinks;
-    adapters = settings.adapters;
   }
 
-  delete settings.chainLinks;
-  delete settings.adapters;
+  // pulling data from buffer
+  let adapters = buffer.adapters;
+  const chainLinks = buffer.chainLinks;
 
-  // default
-  const chainLinkIndex = chain.push(new ConsoleChainLink(settings, new ChainLinkUtility()));
+  const chain = new LoggerChain(settings);
+  instance = { chain };
+
+  // adding default Console chain link
+  const chainLinkIndex = chain.push(new ConsoleChainLink(settings));
   chain.bindAdapter('logger', new Winston(chain, chainLinkIndex));
 
-  /*
-    Custom:
-    chainLinks
-  */
-  if (Array.isArray(chainLinks)) {
-    for (const CustomChainLink of chainLinks) {
-      // if constructor passed in the array
-      if (typeof CustomChainLink === 'function') {
-        chain.push(new CustomChainLink(settings, new ChainLinkUtility()));
-        // if a pre-configured object
-      } else if (CustomChainLink !== null && typeof CustomChainLink === 'object') {
-        const chainLinkConfig = Object.assign({}, CustomChainLink.config, settings);
-        const ChainLinkClass = CustomChainLink.class;
-        chain.push(new ChainLinkClass(chainLinkConfig, new ChainLinkUtility()));
-        // if a pre-configured object also exposes adapter
-        if (CustomChainLink.adapter !== null && typeof CustomChainLink.adapter === 'object') {
-          const adapter = CustomChainLink.adapter;
-          adapters = Object.assign({}, adapters, { [adapter.name]: adapter.class });
-        }
+  // Custom chainLinks
+  for (const CustomChainLink of chainLinks) {
+    // if constructor passed in the array
+    if (typeof CustomChainLink === 'function') {
+      chain.push(new CustomChainLink(settings));
+      // if a pre-configured chainLink with some link-specific settings
+    } else if (CustomChainLink !== null && typeof CustomChainLink === 'object') {
+      const chainLinkConfig = Object.assign({}, CustomChainLink.config, settings);
+      const ChainLinkClass = CustomChainLink.class;
+      chain.push(new ChainLinkClass(chainLinkConfig));
+      // if a pre-configured object also exposes adapter
+      if (CustomChainLink.adapter !== null && typeof CustomChainLink.adapter === 'object') {
+        const adapter = CustomChainLink.adapter;
+        adapters = Object.assign({}, adapters, {
+          [adapter.name]: adapter.class
+        });
       }
     }
   }
-
+  // Custom adapters
   // adapter key-value objects: { name -> constructor  }
   if (adapters !== null && typeof adapters === 'object') {
     for (const adapterName of Object.keys(adapters)) {
@@ -245,3 +229,5 @@ module.exports = (config) => {
   }
   return instance;
 };
+
+module.exports.chainBuffer = buffer;

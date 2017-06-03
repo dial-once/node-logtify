@@ -1,7 +1,6 @@
 const assert = require('assert');
 const sinon = require('sinon');
 const ConsoleLink = require('../../src/chainLinks/console-link');
-const ChainLinkUtility = require('../../src/modules/chain-link-utility');
 const Message = require('../../src/modules/message');
 
 describe('Console chain link ', () => {
@@ -22,12 +21,12 @@ describe('Console chain link ', () => {
 
   it('should not throw if no settings are given', () => {
     assert(typeof ConsoleLink, 'function');
-    const consoleChain = new ConsoleLink(null, new ChainLinkUtility());
+    const consoleChain = new ConsoleLink(null);
     assert.notEqual(consoleChain.winston, undefined);
   });
 
   it('should expose its main functions', () => {
-    const consoleChain = new ConsoleLink({}, new ChainLinkUtility());
+    const consoleChain = new ConsoleLink({});
     assert(typeof consoleChain, 'object');
     assert.equal(typeof consoleChain.isReady, 'function');
     assert.equal(typeof consoleChain.isEnabled, 'function');
@@ -39,24 +38,25 @@ describe('Console chain link ', () => {
   });
 
   it('should return true/false if initialized/not initialized', () => {
-    const consoleChain = new ConsoleLink(null, new ChainLinkUtility());
+    const consoleChain = new ConsoleLink(null);
     assert.equal(consoleChain.isReady(), true);
     delete consoleChain.winston;
     assert.equal(consoleChain.isReady(), false);
   });
 
   it('should indicate if it is switched on/off [settings]', () => {
-    let consoleChain = new ConsoleLink({ CONSOLE_LOGGING: true }, new ChainLinkUtility());
+    let consoleChain = new ConsoleLink({ CONSOLE_LOGGING: true });
     assert.equal(consoleChain.isEnabled(), true);
-    consoleChain = new ConsoleLink({ CONSOLE_LOGGING: false }, new ChainLinkUtility());
+    consoleChain = new ConsoleLink({ CONSOLE_LOGGING: false });
     assert.equal(consoleChain.isEnabled(), false);
-    consoleChain = new ConsoleLink({}, new ChainLinkUtility());
-    assert.equal(consoleChain.isEnabled(), false);
+    consoleChain = new ConsoleLink({});
+    // should be enabled by default
+    assert.equal(consoleChain.isEnabled(), true);
   });
 
   it('should indicate if it is switched on/off [envs]', () => {
-    const consoleChain = new ConsoleLink({}, new ChainLinkUtility());
-    assert.equal(consoleChain.isEnabled(), false);
+    const consoleChain = new ConsoleLink({});
+    assert.equal(consoleChain.isEnabled(), true);
     process.env.CONSOLE_LOGGING = true;
     assert.equal(consoleChain.isEnabled(), true);
     process.env.CONSOLE_LOGGING = false;
@@ -64,7 +64,7 @@ describe('Console chain link ', () => {
   });
 
   it('should indicate if it is switched on/off [envs should have more privilege]', () => {
-    const consoleChain = new ConsoleLink({ CONSOLE_LOGGING: true }, new ChainLinkUtility());
+    const consoleChain = new ConsoleLink({ CONSOLE_LOGGING: true });
     assert.equal(consoleChain.isEnabled(), true);
     process.env.CONSOLE_LOGGING = false;
     assert.equal(consoleChain.isEnabled(), false);
@@ -73,12 +73,12 @@ describe('Console chain link ', () => {
   });
 
   it('should not break down if null is logged', () => {
-    const consoleChain = new ConsoleLink({ CONSOLE_LOGGING: 'true' }, new ChainLinkUtility());
+    const consoleChain = new ConsoleLink({ CONSOLE_LOGGING: 'true' });
     consoleChain.handle(null);
   });
 
   it('should log message if CONSOLE_LOGGING = true', () => {
-    const consoleChain = new ConsoleLink({ CONSOLE_LOGGING: 'true' }, new ChainLinkUtility());
+    const consoleChain = new ConsoleLink({ CONSOLE_LOGGING: 'true' });
     const spy = sinon.spy(consoleChain.winston.log);
     consoleChain.winston.log = spy;
     const message = new Message();
@@ -87,7 +87,7 @@ describe('Console chain link ', () => {
   });
 
   it('should not log message if CONSOLE_LOGGING = false', () => {
-    const consoleChain = new ConsoleLink({ CONSOLE_LOGGING: 'false' }, new ChainLinkUtility());
+    const consoleChain = new ConsoleLink({ CONSOLE_LOGGING: 'false' });
     const spy = sinon.spy(consoleChain.winston.log);
     consoleChain.winston.log = spy;
     const message = new Message();
@@ -99,7 +99,7 @@ describe('Console chain link ', () => {
     const consoleChain = new ConsoleLink({
       CONSOLE_LOGGING: 'true',
       MIN_LOG_LEVEL: 'error'
-    }, new ChainLinkUtility());
+    });
     const spy = sinon.spy(consoleChain.winston.log);
     consoleChain.winston.log = spy;
     const message = new Message();
@@ -108,7 +108,7 @@ describe('Console chain link ', () => {
   });
 
   it('should not log if message level < MIN_LOG_LEVEL [envs]', () => {
-    const consoleChain = new ConsoleLink({ CONSOLE_LOGGING: 'true' }, new ChainLinkUtility());
+    const consoleChain = new ConsoleLink({ CONSOLE_LOGGING: 'true' });
     const spy = sinon.spy(consoleChain.winston.log);
     consoleChain.winston.log = spy;
     const message = new Message();
@@ -118,7 +118,7 @@ describe('Console chain link ', () => {
   });
 
   it('should log if message level >= MIN_LOG_LEVEL_CONSOLE but < MIN_LOG_LEVEL [envs]', () => {
-    const consoleChain = new ConsoleLink({ CONSOLE_LOGGING: 'true' }, new ChainLinkUtility());
+    const consoleChain = new ConsoleLink({ CONSOLE_LOGGING: 'true' });
     const spy = sinon.spy(consoleChain.winston.log);
     consoleChain.winston.log = spy;
     const message = new Message('warn');
@@ -129,7 +129,7 @@ describe('Console chain link ', () => {
   });
 
   it('should log if message level = MIN_LOG_LEVEL [envs]', () => {
-    const consoleChain = new ConsoleLink({ CONSOLE_LOGGING: 'true' }, new ChainLinkUtility());
+    const consoleChain = new ConsoleLink({ CONSOLE_LOGGING: 'true' });
     const spy = sinon.spy(consoleChain.winston.log);
     consoleChain.winston.log = spy;
     const message = new Message('error');
@@ -139,7 +139,7 @@ describe('Console chain link ', () => {
   });
 
   it('should log if message level > MIN_LOG_LEVEL [envs]', () => {
-    const consoleChain = new ConsoleLink({ CONSOLE_LOGGING: 'true' }, new ChainLinkUtility());
+    const consoleChain = new ConsoleLink({ CONSOLE_LOGGING: 'true' });
     const spy = sinon.spy(consoleChain.winston.log);
     consoleChain.winston.log = spy;
     const message = new Message('error');
@@ -149,12 +149,12 @@ describe('Console chain link ', () => {
   });
 
   it('should not throw if next link does not exist', () => {
-    const chainLink = new ConsoleLink({}, new ChainLinkUtility());
+    const chainLink = new ConsoleLink({});
     chainLink.next();
   });
 
   it('should link a new chainLink', () => {
-    const chainLink = new ConsoleLink({}, new ChainLinkUtility());
+    const chainLink = new ConsoleLink({});
     const spy = sinon.spy(sinon.stub());
     const mock = {
       handle: spy

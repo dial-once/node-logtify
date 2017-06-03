@@ -1,5 +1,4 @@
 const assert = require('assert');
-const sinon = require('sinon');
 
 const modulePath = '../src/index';
 
@@ -16,12 +15,6 @@ describe('entry point', () => {
 
   it('should return a function', () => {
     assert(typeof require(modulePath), 'function');
-  });
-
-  it('should execute without an exception (no params) but print a warning message', () => {
-    const spy = sinon.spy(console, 'warn');
-    require(modulePath)();
-    assert(spy.calledWith('Logtify should be initilised before used without config.'));
   });
 
   it('should execute without an exception (params)', () => {

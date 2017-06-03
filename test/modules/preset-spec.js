@@ -35,10 +35,8 @@ describe('Presets', () => {
   });
 
   it('should return a piece of a config object [dial-once]', () => {
-    const result = preset({ something: 'else', presets: ['dial-once'] });
+    const result = preset({ presets: ['dial-once'] });
     assert(result);
     assert(typeof result === 'object');
-    assert.equal(result.chainLinks.length, 2);
-    assert.equal(result.chainLinks[0].config.something, 'else');
   });
 });

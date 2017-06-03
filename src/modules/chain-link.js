@@ -1,10 +1,10 @@
 const deepFreeze = require('deep-freeze');
 /**
-  @class ChainLinkUtility
+  @class ChainLink
   A basic interface based on the Chain of Resp Pattern
   Contains common functions, used by chain links implementations
 **/
-class ChainLinkUtility {
+class ChainLink {
   /**
     @constructor
     Construct an instance of a ChainLink class
@@ -21,6 +21,7 @@ class ChainLinkUtility {
     falls back to 'info' as a default log level
   **/
   constructor() {
+    this.nextLink = null;
     const levels = [
       ['silly', 0],
       ['verbose', 1],
@@ -51,6 +52,27 @@ class ChainLinkUtility {
     }
     return minLogLevel;
   }
+
+  /**
+    @function next
+    @param message {Object} - a message package object
+    Envoke the handle @function of the next chain link if provided
+  **/
+  next(message) {
+    if (this.nextLink) {
+      this.nextLink.handle(message);
+    }
+  }
+
+  /**
+    @function link
+    Links current chain link to a next chain link
+    @param nextLink {Object} - an optional next link for current chain link
+  **/
+  link(nextLink) {
+    this.nextLink = nextLink;
+  }
+
 }
 
-module.exports = ChainLinkUtility;
+module.exports = ChainLink;

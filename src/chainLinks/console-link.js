@@ -1,5 +1,5 @@
 const winston = require('winston');
-
+const ChainLink = require('../modules/chain-link');
 /**
   @class ConsoleLink
   A console logger chain link
@@ -14,39 +14,19 @@ const winston = require('winston');
 
   Environment variables have a higher priority over a settings object parameters
 **/
-class ConsoleLink {
+class ConsoleLink extends ChainLink {
   /**
     @constructor
     Construct an instance of a ConsoleLink @class
     @param configs {Object} - LoggerChain configuration object
     @param utility {Object} - Utility class with some common rules for each chainLink
   **/
-  constructor(configs, utility) {
+  constructor(configs) {
+    super();
     this.settings = configs || {};
     this.winston = new winston.Logger();
     this.winston.add(winston.transports.Console);
-    this.utility = utility;
     this.name = 'CONSOLE';
-  }
-
-  /**
-    @function next
-    @param message {Object} - a message package object
-    Envoke the handle @function of the next chain link if provided
-  **/
-  next(message) {
-    if (this.nextLink) {
-      this.nextLink.handle(message);
-    }
-  }
-
-  /**
-    @function link
-    Links current chain link to a next chain link
-    @param nextLink {Object} - an optional next link for current chain link
-  **/
-  link(nextLink) {
-    this.nextLink = nextLink;
   }
 
   /**
@@ -66,8 +46,10 @@ class ConsoleLink {
     @return {boolean} - if this chain link is switched on / off
   **/
   isEnabled() {
-    return ['true', 'false'].includes(process.env.CONSOLE_LOGGING) ?
-      process.env.CONSOLE_LOGGING === 'true' : !!this.settings.CONSOLE_LOGGING;
+    const result = ['true', 'false'].includes(process.env.CONSOLE_LOGGING) ?
+      process.env.CONSOLE_LOGGING === 'true' : this.settings.CONSOLE_LOGGING;
+    // enabled by default
+    return [null, undefined].includes(result) ? true : result;
   }
 
   /**
@@ -84,10 +66,9 @@ class ConsoleLink {
   handle(message) {
     if (this.isReady() && this.isEnabled() && message) {
       const content = message.payload;
-      const logLevels = this.utility.logLevels;
-      const messageLevel = logLevels.has(content.level) ? content.level : logLevels.get('default');
-      const minLogLevel = this.utility.getMinLogLevel(this.settings, this.name);
-      if (logLevels.get(messageLevel) >= logLevels.get(minLogLevel)) {
+      const messageLevel = this.logLevels.has(content.level) ? content.level : this.logLevels.get('default');
+      const minLogLevel = this.getMinLogLevel(this.settings, this.name);
+      if (this.logLevels.get(messageLevel) >= this.logLevels.get(minLogLevel)) {
         const prefix = message.getPrefix(this.settings);
         this.winston.log(messageLevel, `${prefix}${content.text}`, content.meta);
       }
