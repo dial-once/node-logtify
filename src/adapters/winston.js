@@ -38,7 +38,7 @@ class Winston {
 
   /**
     @function log
-    Log a message with the provided log level and metadata
+    Log a message with the provided log level and metadatas
     @param logLevel {string} - one of the supported log levels:
     - info
     - warn
@@ -47,7 +47,7 @@ class Winston {
     - silly
     - verbose
     @param message {string|Error} - message / Error to log
-    @param args {Object} - message metadata
+    @param args {Object} - message metadatas
   **/
   log(logLevel, message, ...args) {
     this.chain.log(logLevel, message, ...args);

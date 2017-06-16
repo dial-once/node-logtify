@@ -8,7 +8,6 @@ const ChainLink = require('../modules/chain-link');
   Has the following configurations (either env var or settings param):
   - CONSOLE_LOGGING {'true'|'false'} - switches on / off the use of this chain link
   - MIN_LOG_LEVEL_CONSOLE = {'silly'|'verbose'|'debug'|'info'|'warn'|'error'} - min log level of a message to log
-  This config has a higher priority than a global DEFAULT_LOG_LEVEl config
   @see ChainLink @class for info on the log level priorities
   If a message's level is >= than a MIN_LOG_LEVEL_CONSOLE - it will be notified. Otherwise - skipped
 
@@ -70,7 +69,10 @@ class ConsoleLink extends ChainLink {
       const minLogLevel = this.getMinLogLevel(this.settings, this.name);
       if (this.logLevels.get(messageLevel) >= this.logLevels.get(minLogLevel)) {
         const prefix = message.getPrefix(this.settings);
-        this.winston.log(messageLevel, `${prefix}${content.text}`, content.meta);
+        const messageText = !prefix.isEmpty ?
+          `[${prefix.timestamp}${prefix.environment}${prefix.logLevel}${prefix.reqId}]${content.text}` :
+          content.text;
+        this.winston.log(messageLevel, messageText, content.meta);
       }
     }
     this.next(message);

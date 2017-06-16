@@ -30,6 +30,7 @@ class Message {
       Object.assign(this.payload.meta, metaData);
     }
     this.payload = deepFreeze(this.payload);
+    this.prefix = null;
   }
 
   /**
@@ -48,19 +49,32 @@ class Message {
     @return {string} - Prefix for the log message. Or an empty string of no prefix data logging is enabled
   **/
   getPrefix(settings = {}, delimiter = ':') {
-    const message = this.payload;
-    const includeTimestamp = process.env.LOG_TIMESTAMP === 'true' || !!settings.LOG_TIMESTAMP;
-    const includeEnvironment = process.env.LOG_ENVIRONMENT === 'true' || !!settings.LOG_ENVIRONMENT;
-    const includeLogLevel = process.env.LOG_LEVEL === 'true' || !!settings.LOG_LEVEL;
-    let prefix = '';
-    prefix += includeTimestamp ? `${new Date().toISOString()}${delimiter}` : '';
-    prefix += includeEnvironment ? `${process.env.NODE_ENV || 'local'}${delimiter}` : '';
-    prefix += includeLogLevel ? `${message.level.toUpperCase()}${delimiter}` : '';
-    if (message.meta.reqId) {
-      const includeReqId = process.env.LOG_REQID === 'true' || !!settings.LOG_REQID;
-      prefix += includeReqId ? `${message.meta.reqId}` : '';
+    if (this.prefix === null) {
+      const message = this.payload;
+      const includeTimestamp = process.env.LOG_TIMESTAMP === 'true' || !!settings.LOG_TIMESTAMP;
+      const includeEnvironment = process.env.LOG_ENVIRONMENT === 'true' || !!settings.LOG_ENVIRONMENT;
+      const includeLogLevel = process.env.LOG_LEVEL === 'true' || !!settings.LOG_LEVEL;
+      const environment = process.env.NODE_ENV === 'undefined' ? 'local' : process.env.NODE_ENV;
+      this.prefix = {
+        timestamp: includeTimestamp ? `${new Date().toISOString()}${delimiter}` : '',
+        environment: includeEnvironment ? `${environment}${delimiter}` : '',
+        logLevel: includeLogLevel ? `${message.level.toUpperCase()}${delimiter}` : '',
+        reqId: ''
+      };
+      if (message.meta.reqId) {
+        const includeReqId = process.env.LOG_REQID === 'true' || !!settings.LOG_REQID;
+        this.prefix.reqId = includeReqId ? `${message.meta.reqId}` : '';
+      }
+      let isEmpty = true;
+      for (const key in this.prefix) { // eslint-disable-line
+        if (this.prefix[key] !== '') {
+          isEmpty = false;
+          break;
+        }
+      }
+      this.prefix.isEmpty = isEmpty;
     }
-    return prefix ? `[${prefix}] ` : '';
+    return this.prefix;
   }
 }
 

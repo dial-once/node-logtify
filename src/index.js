@@ -15,7 +15,7 @@ const buffer = new ChainBuffer();
   Logging chain. Consists of individual chain links, linked together.
   Executes each chain link separately one after another.
 
-  Exposes chainStart and chanEnd for chain modification outside of the module
+  Exposes chainStart and chainEnd for chain modification outside of the module
 
   Converts provided parameters into a message package object of the following structure:
   {

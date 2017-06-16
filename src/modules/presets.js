@@ -1,6 +1,6 @@
 /**
   @function configPrefix
-  return an piece of settings object, configured by a 'prefix' or 'no-prefix' presets
+  return a piece of settings object, configured by a 'prefix' or 'no-prefix' presets
   @param include {boolean} - the value of the object properties for message prefix configuration
   @return {object} - a piece of settings, responsible for prefix configuration
 **/

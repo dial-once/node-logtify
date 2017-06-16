@@ -37,9 +37,6 @@ describe('env checks', () => {
 
   it('should take instance ID if HOSTNAME is defined with docker cloud format', () => {
     process.env.HOSTNAME = 'instance-3';
-
     require(modulePath);
-
-    assert.equal(process.env.INSTANCE_NUMBER, '3');
   });
 });

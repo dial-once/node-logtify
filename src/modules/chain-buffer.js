@@ -3,8 +3,8 @@ const assert = require('assert');
 /*
  *  @class ChainBuffer
  *  Buffer for the chain.
- *  Bufferizes chain links and adapters for further auto connectiont to the main link
- *  When initialixing, chain looks into a buffer and pulls all the chain links and adapters from here
+ *  Bufferizes chain links and adapters for further auto connection to the main link
+ *  When initialising, chain looks into a buffer and pulls all the chain links and adapters from here
  */
 class ChainBuffer {
   /*

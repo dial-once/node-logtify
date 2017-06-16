@@ -80,6 +80,10 @@ describe('Message class test', () => {
     });
   });
   describe('getPrefix() ', () => {
+    before(() => {
+      this.emptyPrefix = { timestamp: '', environment: '', logLevel: '', reqId: '', isEmpty: true };
+    });
+
     beforeEach(() => {
       delete process.env.LOG_TIMESTAMP;
       delete process.env.LOG_ENVIRONMENT;
@@ -97,63 +101,66 @@ describe('Message class test', () => {
     it('should return empty string if no envs provided', () => {
       const message = new Message();
       const prefix = message.getPrefix();
-      assert.equal(prefix, '');
+      assert.deepEqual(prefix, this.emptyPrefix);
     });
 
     it('should return data according to settings [with env]timestamp]', () => {
       const message = new Message();
       process.env.LOG_TIMESTAMP = 'false';
       const prefix = message.getPrefix();
-      assert.equal(prefix, '');
+      assert.deepEqual(prefix, this.emptyPrefix);
     });
 
     it('should return data according to settings [with env]timestamp]', () => {
       const message = new Message();
       process.env.LOG_TIMESTAMP = 'true';
       const prefix = message.getPrefix();
-      assert.notEqual(prefix, '');
+      assert.notDeepEqual(prefix, this.emptyPrefix);
     });
 
     it('should return data according to settings [with env] [environment]', () => {
       const message = new Message();
       process.env.LOG_ENVIRONMENT = 'false';
       const prefix = message.getPrefix();
-      assert.equal(prefix, '');
+      assert.deepEqual(prefix, this.emptyPrefix);
     });
 
     it('should return data according to settings [with env] [environment]', () => {
       const message = new Message();
       process.env.LOG_ENVIRONMENT = 'true';
       const prefix = message.getPrefix();
-      assert.equal(prefix, `[${process.env.NODE_ENV || 'local'}:] `);
+      const environment = process.env.NODE_ENV === 'undefined' ? 'local' : process.env.NODE_ENV;
+      const notEmptyPrefix = Object.assign({}, this.emptyPrefix, { environment: `${environment}:`, isEmpty: false });
+      assert.deepEqual(prefix, notEmptyPrefix);
     });
 
     it('should return data according to settings [with env] [log level]', () => {
       const message = new Message();
       process.env.LOG_LEVEL = 'false';
       const prefix = message.getPrefix();
-      assert.equal(prefix, '');
+      assert.deepEqual(prefix, this.emptyPrefix);
     });
 
     it('should return data according to settings [with env] [log level]', () => {
       const message = new Message();
       process.env.LOG_LEVEL = 'true';
       const prefix = message.getPrefix();
-      assert.equal(prefix, '[INFO:] ');
+      const notEmptyPrefix = Object.assign({}, this.emptyPrefix, { logLevel: 'INFO:', isEmpty: false });
+      assert.deepEqual(prefix, notEmptyPrefix);
     });
 
     it('should return data according to settings [with env] [reqId] [not provided]', () => {
       const message = new Message();
       process.env.LOG_REQID = 'false';
       const prefix = message.getPrefix();
-      assert.equal(prefix, '');
+      assert.deepEqual(prefix, this.emptyPrefix);
     });
 
     it('should return data according to settings [with env] [reqId] [not provided]', () => {
       const message = new Message();
       process.env.LOG_REQID = 'true';
       const prefix = message.getPrefix();
-      assert.equal(prefix, '');
+      assert.deepEqual(prefix, this.emptyPrefix);
     });
 
     it('should return data according to settings [with env] [reqId] [provided]', () => {
@@ -162,7 +169,7 @@ describe('Message class test', () => {
       });
       process.env.LOG_REQID = 'false';
       const prefix = message.getPrefix();
-      assert.equal(prefix, '');
+      assert.deepEqual(prefix, this.emptyPrefix);
     });
 
     it('should return data according to settings [with env] [reqId] [provided]', () => {
@@ -171,55 +178,59 @@ describe('Message class test', () => {
       });
       process.env.LOG_REQID = 'true';
       const prefix = message.getPrefix();
-      assert.equal(prefix, '[test] ');
+      const notEmptyPrefix = Object.assign({}, this.emptyPrefix, { reqId: 'test', isEmpty: false });
+      assert.deepEqual(prefix, notEmptyPrefix);
     });
 
     it('should return data according to settings [settings]timestamp]', () => {
       const message = new Message();
       const prefix = message.getPrefix({ LOG_TIMESTAMP: false });
-      assert.equal(prefix, '');
+      assert.deepEqual(prefix, this.emptyPrefix);
     });
 
     it('should return data according to settings [settings]timestamp]', () => {
       const message = new Message();
       const prefix = message.getPrefix({ LOG_TIMESTAMP: true });
-      assert.notEqual(prefix, '');
+      assert.notDeepEqual(prefix, this.emptyPrefix);
     });
 
     it('should return data according to settings [settings] [environment]', () => {
       const message = new Message();
       const prefix = message.getPrefix({ LOG_ENVIRONMENT: false });
-      assert.equal(prefix, '');
+      assert.deepEqual(prefix, this.emptyPrefix);
     });
 
     it('should return data according to settings [settings] [environment]', () => {
       const message = new Message();
       const prefix = message.getPrefix({ LOG_ENVIRONMENT: true });
-      assert.equal(prefix, `[${process.env.NODE_ENV || 'local'}:] `);
+      const environment = process.env.NODE_ENV === 'undefined' ? 'local' : process.env.NODE_ENV;
+      const notEmptyPrefix = Object.assign({}, this.emptyPrefix, { environment: `${environment}:`, isEmpty: false });
+      assert.deepEqual(prefix, notEmptyPrefix);
     });
 
     it('should return data according to settings [settings] [log level]', () => {
       const message = new Message();
       const prefix = message.getPrefix({ LOG_LEVEL: false });
-      assert.equal(prefix, '');
+      assert.deepEqual(prefix, this.emptyPrefix);
     });
 
     it('should return data according to settings [settings] [log level]', () => {
       const message = new Message();
       const prefix = message.getPrefix({ LOG_LEVEL: true });
-      assert.equal(prefix, '[INFO:] ');
+      const notEmptyPrefix = Object.assign({}, this.emptyPrefix, { logLevel: 'INFO:', isEmpty: false });
+      assert.deepEqual(prefix, notEmptyPrefix);
     });
 
     it('should return data according to settings [settings] [reqId] [not provided]', () => {
       const message = new Message();
       const prefix = message.getPrefix({ LOG_REQID: false });
-      assert.equal(prefix, '');
+      assert.deepEqual(prefix, this.emptyPrefix);
     });
 
     it('should return data according to settings [settings] [reqId] [not provided]', () => {
       const message = new Message();
       const prefix = message.getPrefix({ LOG_REQID: true });
-      assert.equal(prefix, '');
+      assert.deepEqual(prefix, this.emptyPrefix);
     });
 
     it('should return data according to settings [settings] [reqId] [provided]', () => {
@@ -227,7 +238,7 @@ describe('Message class test', () => {
         reqId: 'test'
       });
       const prefix = message.getPrefix({ LOG_REQID: false });
-      assert.equal(prefix, '');
+      assert.deepEqual(prefix, this.emptyPrefix);
     });
 
     it('should return data according to settings [settings] [reqId] [provided]', () => {
@@ -235,13 +246,16 @@ describe('Message class test', () => {
         reqId: 'test'
       });
       const prefix = message.getPrefix({ LOG_REQID: true });
-      assert.equal(prefix, '[test] ');
+      const notEmptyPrefix = Object.assign({}, this.emptyPrefix, { reqId: 'test', isEmpty: false });
+      assert.deepEqual(prefix, notEmptyPrefix);
     });
 
     it('should be able to change the delimiter', () => {
       const message = new Message(null, 'Hello world');
       const prefix = message.getPrefix({ LOG_ENVIRONMENT: true }, '*');
-      assert.equal(prefix, `[${process.env.NODE_ENV || 'local'}*] `);
+      const environment = process.env.NODE_ENV === 'undefined' ? 'local' : process.env.NODE_ENV;
+      const notEmptyPrefix = Object.assign({}, this.emptyPrefix, { environment: `${environment}*`, isEmpty: false });
+      assert.deepEqual(prefix, notEmptyPrefix);
     });
   });
 });
