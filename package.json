@@ -3,9 +3,34 @@
   "version": "0.0.0",
   "description": "Logger based on the Chain of Responsibility pattern",
   "main": "src/index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "directories": {
+    "test": "test"
   },
-  "author": "",
-  "license": "ISC"
+  "scripts": {
+    "test": "make test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dial-once/node-logtify.git"
+  },
+  "author": "Dial Once",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/dial-once/node-logtify/issues"
+  },
+  "homepage": "https://github.com/dial-once/node-logtify#readme",
+  "dependencies": {
+    "deep-freeze": "0.0.1",
+    "winston": "^2.2.0"
+  },
+  "devDependencies": {
+    "eslint": "^3.16.1",
+    "eslint-config-airbnb": "^13.0.0",
+    "eslint-plugin-import": "^2.2.0",
+    "eslint-plugin-jsx-a11y": "^2.2.3",
+    "eslint-plugin-react": "^6.8.0",
+    "istanbul": "^0.4.5",
+    "mocha": "^3.2.0",
+    "sinon": "^1.17.6"
+  }
 }
