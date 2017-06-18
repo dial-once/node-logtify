@@ -2,7 +2,7 @@
 
 [![CircleCI](https://circleci.com/gh/dial-once/node-logtify/tree/develop.svg?style=svg)](https://circleci.com/gh/dial-once/node-logtify/tree/develop)
 
-**[ES6]** Logger based on ``Chain of Responsibility`` pattern and ``winston`` module
+**[ES6] [Rx]**
 
 ### [Dev Tips](https://github.com/dial-once/node-logtify/wiki)
 
@@ -11,11 +11,11 @@
 npm i logtify
 ```
 
-This module is an implementation of a chain, where each element is a small submodule, that does it's own small work with the same identical incoming data. ``Console`` chain element is available by default.
+This module uses RxJs library to implement a pub-sub model.
 
-Each chain element contains a ``nextChainLink`` property, which is a link to the next element of the chain. It also has a ``handle`` function, which accepts ``Message`` - a **frozen** message object and a ``link`` function, that is meant to set the ``nextChainLink``. A ``handle`` function processes the message and eventually passes is further along the chain to the next element (if exists).
+Each subscriber contains a ``handle`` function, which accepts ``Message``.
 
-If needed, new chain links and adapters can be added to the chain.
+If needed, new subscribers and adapters can be added to the stream.
 
 ## Configuration
 ### Minimal
@@ -23,42 +23,45 @@ If needed, new chain links and adapters can be added to the chain.
 const { logger } = require('logtify')();
 ```
 ### Parameters
-You can configure the chain by passing the following parameters or setting up the environment variables.
+You can configure the stream by passing the following parameters or setting up the environment variables.
 
-__Such settings will be passed to each chain element__:
 ```js
+// Note, that such settings will be passed to each subscriber:
 const { logger } = require('logtify')({
-    CONSOLE_LOGGING: false, // switches off the console link chain
+    CONSOLE_LOGGING: false, // switches off the console subscriber
     MIN_LOG_LEVEL: 'info' // minimal message level to be logged
 });
+
+// env variables only
+LOGTIFY_BUFFER_SIZE = 1; // amount of log messages that will be kept in buffer before disposed
 ```
 **NOTE!** Environment variables have a higher priority over the settings object
 
-### Add new chain element
-By default, logtify contains only 1 chain link - `Console` chain link. However, you can add new chain links as the following:
+### Add new subscriber
+By default, logtify contains only 1 subscriber - `Console`. However, you can add new subscruber as the following:
 ```js
 require('logtify-logentries')();
 require('logtify-bugsnag')();
 const { logger } = require('logtify')();
 ```
 
-### Preconfigure chain element
-If you need to preconfigure the chain link before adding it to the chain, you can do it like this:
+### Preconfigure subscriber
+If you need to preconfigure the subscriber before adding it to the stream, you can do it like this:
 ```js
-// these settings are chain-link-specific and will only be received by this chain link
+// these settings are subscriber-specific and will only be received by this subscriber
 require('logtify-logentries')({ LOGS_TOKEN: 'YOUR_LOGENTRIES_TOKEN' });
 require('logtify-bugsnag')({ BUGS_TOKEN: 'YOUR_BUGSNAG_TOKEN' });
 const { logger } = require('logtify')();
 ```
 
 ### Add adapter
-If a chain link provides an adapter, it will be exposed in the logtify instance
+If a subscriber provides an adapter, it will be exposed in the logtify instance
 ```js
 require('logtify-bugsnag');
 const { logger, notifier } = require('logtify')();
 ```
 
-__However, be aware!__ If you import he chain link with adapter __after__ you initialize the chain link, you need to update the reference.
+__However, be aware!__ If you import he subscriber with adapter __after__ you initialize the stream, you need to update the reference.
 
 ```js
 const { logger, notifier } = require('logtify')();
@@ -67,8 +70,6 @@ require('logtify-bugsnag');
 const { logger, notifier } = require('logtify')();
 // notifier is Object 
 ```
-
-
 
 ### Logger (Winston adapter) usage:
 ```js
@@ -84,39 +85,34 @@ logger.log('info', 'Hello world');
 
 logger.profile('label');
 
-logger.chain // access to chain
+logger.stream // access to stream
 ```
 
-### Chain Usage:
+### Stream Usage:
 ```js
-const { chain } = require('logtify')();
+const { stream } = require('logtify')();
 
 // Functions
-chain.log('warn', 'Hello world', { metadata: 'Something' });
-chain.link()                   // re-connect the chain
-chain.bindAdapter('name', obj) // add adapter
-chain.unbindAdapter('name')    // remove adapter
-chain.push(obj)                // add chain link
+stream.log('warn', 'Hello world', { metadata: 'Something' });
+stream.bindAdapter('name', obj) // add adapter
+stream.unbindAdapter('name')    // remove adapter
+stream.subscribe(subscriber)     // add a subscriber
 
 // properties
-chain.chainStart;   // { Object }
-chain.chainEnd;     // { Object }
-chain.settings;     // { Object }
-chain.chainLinks;   // { Array }
-chain.isConnected;  // { boolean }
-chain.adapters;     // { Map }
+stream.settings;     // { Object }
+stream.adapters;     // { Map }
 
 // classes
-chain.Message;      // { Object }
-chain.ChainLink;      // { Object }
+stream.Message;      // { Object }
+stream.Subscriber;      // { Object }
 ```
 
 ### Interface
 
 ### Internal implementation details
-Firstly, you call any logging function from either ``logger`` or ``chain``.
+Firstly, you call any logging function from either ``logger`` or ``stream``.
 
-Then provided data is then converted into a [frozen](https://www.npmjs.com/package/deep-freeze) message package object:
+Then provided data is then converted into a message package object of the following structure:
 
 ```js
 // if text message
@@ -133,23 +129,19 @@ Then provided data is then converted into a [frozen](https://www.npmjs.com/packa
 }
 ```
 
-Such message structure travels from start to the end of the chain.
-
-Each chain link receives identical copy of a message and does not modify it in any way.
+Each subscriber receives identical copy of a message.
 
 ## Tweaking
 As mentioned, a module can be configured with either a settings object or env variables.
 
-A chain link will process a message if all the 3 steps are done:
-* A chain link is configured and ready
-* A chain link will be used
+A subscriber will process a message if all the 3 steps are done:
+* A subscriber is configured and ready
+* A subscriber will be used
 * A message is present
 
-Let's take a look at each chain separately:
-
 Default:
-* A Console chain is always ready
-* A Console chain will be used if ``CONSOLE_LOGGING !== 'false'`` either as an env var or a property in the settings object
+* A Console subscriber is always ready
+* A Console subscriber will be used if ``CONSOLE_LOGGING !== 'false'`` either as an env var or a property in the settings object
 * A message will be sent if ``message.level`` >= ``MIN_LOG_LEVEL_CONSOLE || MIN_LOG_LEVEL`` (env or settings prop)
 
 To change the default logic, change the values of the mentioned properties.
@@ -162,68 +154,58 @@ To change the default logic, change the values of the mentioned properties.
 - warn -> 4
 - error -> 5
 
-These values can be found withint a ``ChainLink`` class, exposed by the chain:
+These values can be found withint a ``Subscriber`` class, exposed by the stream:
 ```js
-const { chain } = require('logtify')();
-const { ChainLink } = chain;
+const { stream } = require('logtify')();
+const { Subscriber } = stream;
 ```
 
-## Adding your own chain link
-The minimal requirements for a chain link is to have the following:
+## Adding your own subscriber
+The minimal requirements for a subscriber is to have the following:
 * handle(message) function, that passes the message further after it's logic
 * a constructor should consume ``settings`` object, which will be injected when during a link initialization
-* next() function, that moves ``message``, received in the ``handle`` function to the next chain link
-* link(next) function, setting the ``nextChainLink``
 
-__The last two are implemented by ``ChainLink`` class__
-
-* To be able to preconfigure the chain link before automatic initialization within the chain, it should expose a wrapper function as the following:
+* To be able to preconfigure the subscriber before automatic initialization within the stream, it should expose a wrapper function as the following:
 ```js
 module.exports = (settings) => {
   // some logic with the configuration
 }
 ```
 
-To let ``logtify`` automatically tie the chain link to the main chain, it should use one of the chainBuffer's functions:
-- addChainLink(chainLink)
+To let ``logtify`` automatically tie the subscriber to the main stream, it should use one of the streamBuffer's functions:
+- addSubscriber(subscriber)
 or 
 - addAdapter(adapter)
 
-This is how you get the chainBuffer object from the logtify module.
-__Make sure to not provide any configurations to the chain and let user do it at the right moment.__
+This is how you get the streamBuffer object from the logtify module.
+__Make sure to not provide any configurations to the stream and let user do it at the right moment.__
 ```js
 const logtify = require('logtify');
-const chainBuffer = logtify.chainBuffer;
-const { chain } = logtify();
+const streamBuffer = logtify.streamBuffer;
+const { stream } = logtify();
 ```
-* in the settings function, it should construct the following object and add it to the chain buffer
+* in the settings function, it should construct the following object and add it to the stream buffer
 ```js
-const chainLinkData = {
-  class: MyChainLinkClass,
+const subscriberData = {
+  class: MySubscriberClass,
   config: configs
 };
 
-chainBuffer.addChainLink(chainLinkData);
+streamBuffer.addSubscriber(subscriberData);
 // take the global settings
-const mergedConfigs = Object.assign({}, configs, chain.settings);
-chain.push(new Logstash(mergedConfigs));
+const mergedConfigs = Object.assign({}, configs, stream.settings);
+stream.subscribe(new Logstash(mergedConfigs));
 ```
 
-Thanks to the ``chainBuffer``, if the chain link will be ``required`` before the ``logtify`` module is initialized:
+Thanks to the ``streamBuffer``, if the subscriber will be ``required`` before the ``logtify`` module is initialized:
 ```js
-require('logtify-my-custom-chain-link')();
+require('logtify-my-custom-subscriber')();
 const logtify = require('logtify')();
 ```
 It will be added automatically
-And thanks to the ``push`` to the chain itself, in case the chainLink is added ``before`` the initialization of ``logtify``:
-```js
-const logtify = require('logtify')();
-require('logtify-my-custom-chain-link')();
-```
-It will not loose the settings, that are already there in the ``logtify`` chain
 
 ## Prefixing
-Chain links may include prefixes into a message. For example
+Subscribers may include prefixes into a message. For example
 ```js
 logger.info('Hello world');
 ```
@@ -231,7 +213,7 @@ will result in:
 
 ``info: [2017-05-10T15:16:31.468Z:local:INFO:] Hello world instanceId={youtInstanceId}``
 
-A prefix is generated by the Message class, which a chain link receives in a ``handle`` function:
+A prefix is generated by the Message class, which a subscriber receives in a ``handle`` function:
 ```js
 handle(message) {
   // a delimiter can be changed
@@ -239,7 +221,7 @@ handle(message) {
 }
 ```
 
-You can enable/disable them with the following environment variables / parameters for the chain settings:
+You can enable/disable them with the following environment variables / parameters for the stream settings:
 ```
 process.env.LOG_TIMESTAMP = 'true';
 process.env.LOG_ENVIRONMENT = 'true';
@@ -258,17 +240,17 @@ And it will result in:
 
 ## Presets
 To make it easier to config the logger, some presets are available:
-* ``dial-once`` - enables Console chain link when ``NODE_ENV`` is either ``staging`` or ``production`` and disables it otherwise
+* ``dial-once`` - enables Console subscriber when ``NODE_ENV`` is neither ``staging`` or ``production`` and disables it otherwise
 
 ```js
-const { chain, logger } = require('logtify')({ presets: ['dial-once'] });
+const { stream, logger } = require('logtify')({ presets: ['dial-once'] });
 ```
 * ``no-prefix`` - disables the prefix from the message
 * ``prefix`` - enables the prefix in the message
 
-Apply a preset by passing it to the chain configs:
+Apply a preset by passing it to the stream configs:
 ```js
-const { chain, logger } = require('logtify')({
+const { stream, logger } = require('logtify')({
     presets: ['dial-once', 'no-prefix']
 });
 ```
@@ -277,8 +259,8 @@ const { chain, logger } = require('logtify')({
 - Winston (logs)
 - [deep-freeze](https://www.npmjs.com/package/deep-freeze)
   
-## Existing chain links:
-- Console chain link (part of this project)
-- [Logentries Chain Link](https://github.com/dial-once/node-logtify-logentries)
-- [Logstash Chain Link](https://github.com/dial-once/node-logtify-logstash)
-- [Bugsnag Chain Link](https://github.com/dial-once/node-logtify-bugsnag)
+## Existing subscribers:
+- Console subscriber (part of this project)
+- [Logentries Subscriber](https://github.com/dial-once/node-logtify-logentries)
+- [Logstash Subscriber](https://github.com/dial-once/node-logtify-logstash)
+- [Bugsnag Subscriber](https://github.com/dial-once/node-logtify-bugsnag)
