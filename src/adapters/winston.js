@@ -1,5 +1,10 @@
 const assert = require('assert');
 
+function loggingFunction(stream, loggingLevel) {
+  return (message, ...args) => {
+    stream.log(loggingLevel, message, ...args);
+  };
+}
 /**
   @class Winston
   Adapter for the winston logger subscriber.
@@ -30,9 +35,7 @@ class Winston {
     this.winston = subscriber.winston;
     const loggingLevels = ['error', 'warn', 'info', 'debug', 'silly', 'verbose'];
     for (const loggingLevel of loggingLevels) {
-      this[loggingLevel] = (message, ...args) => {
-        this.stream.log(loggingLevel, message, ...args);
-      };
+      this[loggingLevel] = loggingFunction(this.stream, loggingLevel);
     }
   }
 
