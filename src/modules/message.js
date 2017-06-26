@@ -1,8 +1,7 @@
-const deepFreeze = require('deep-freeze');
 /**
   @class Message
-  Convert the given parameters into a frozen (@see Object.deepFreeze()) message package
-  @param logLevel {string} - a message log level (@see ChainLink @class for additional info)
+  Convert the given parameters into a correct message format
+  @param logLevel {string} - a message log level (@see Subscriber @class for additional info)
   @param message {Object|Error} - a message payload. Either a text string or an Error object
   @param metas {Object} - metadata
 **/
@@ -29,7 +28,6 @@ class Message {
       const metaData = metas.reduce((sum, next) => Object.assign({}, sum, next));
       Object.assign(this.payload.meta, metaData);
     }
-    this.payload = deepFreeze(this.payload);
     this.prefix = null;
   }
 
@@ -44,9 +42,9 @@ class Message {
 
     reqId will be included only if provided in the message meta
 
-    @param settings {Object} - chain settings. Falls back to {} if not given
+    @param settings {Object} - stream settings. Falls back to {} if not given
     @param delimiter {string} - a character to split prefix parts. Falls back to ':'
-    @return {string} - Prefix for the log message. Or an empty string of no prefix data logging is enabled
+    @return {object} - Prefix for the log message. Or an empty string of no prefix data logging is enabled
   **/
   getPrefix(settings = {}, delimiter = ':') {
     if (this.prefix === null) {

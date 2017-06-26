@@ -1,21 +1,23 @@
 require('./env');
+const Rx = require('rxjs/Rx');
 const Message = require('./modules/message');
-const ChainLink = require('./modules/chain-link');
-const ConsoleChainLink = require('./chainLinks/console-link');
+const Subscriber = require('./modules/subscriber');
+const ConsoleSubscriber = require('./subscribers/console-link');
 const Winston = require('./adapters/winston');
-const ChainBuffer = require('./modules/chain-buffer');
+const StreamBuffer = require('./modules/stream-buffer');
 const preset = require('./modules/presets');
 const assert = require('assert');
 
 let instance;
-const buffer = new ChainBuffer();
+let loggerStream;
+const buffer = new StreamBuffer();
+const bufferSize = parseInt(process.env.LOGTIFY_BUFFER_SIZE, 10);
 
 /**
-  @class LoggerChain
-  Logging chain. Consists of individual chain links, linked together.
-  Executes each chain link separately one after another.
+  @class LoggerStream
+  Logging stream. Consists of individual stream links, linked together.
 
-  Exposes chainStart and chainEnd for chain modification outside of the module
+  Exposes streamStart and streamEnd for stream modification outside of the module
 
   Converts provided parameters into a message package object of the following structure:
   {
@@ -30,98 +32,73 @@ const buffer = new ChainBuffer();
     error: {Error} // in case a message was an error
   }
   Such message package object is frozen, meaning that it can not be modified.
-  This is encouraged to make sure each chain link receives identical structure of the message
+  This is encouraged to make sure each stream link receives identical structure of the message
   @see packMessage @function documentation for detailed implementation
-
-  Chain of Responsibility pattern
-  @see http://www.dofactory.com/javascript/chain-of-responsibility-design-pattern
 **/
-class LoggerChain {
+class LoggerStream {
   /**
     @constructor
-    @param settings {object} - chain configuration object
+    @param settings {object} - stream configuration object
     May contain the following parameters:
     - MIN_LOG_LEVEL {string}
     - MIN_LOG_LEVEL_CONSOLE {string} - higher priority than MIN_LOG_LEVEL
     - CONSOLE_LOGGING {boolean}
     Note, however, that env variables have higher priorities than these settings
 
-    Instance of a LoggerChain exposes:
+    Instance of a LoggerStream exposes:
     - settings object
-    - Utility class - common rules for each chain link
+    - Utility class - common rules for each stream link
     - Message class - packs parameters into a frozen message package
-    - chainLinks - Array of active chainLinks
-    - chainStart and chainEnd
-    - isConnected - whether each chain link is lined to a next one
+    - subscribers - Array of active subscribers
+    - streamStart and streamEnd
+    - isConnected - whether each stream link is lined to a next one
     - adapters {Map} - {string} - {Object} entries of adapter names and objects
 
-    New chain element can be added in runtime as the following:
-    const index = chain.push(chainLinkImpl); // index of your chainLink in the array
+    New stream element can be added in runtime as the following:
+    const index = stream.push(subscriberImpl); // index of your subscriber in the array
 
     New adapter can be added in runtime as the following:
-    chain.bindAdapter('logger', new Winston());
+    stream.bindAdapter('logger', new Winston());
 
     And removed as the following:
-    chain.unbindAdapter('logger');
+    stream.unbindAdapter('logger');
   **/
   constructor(settings) {
     this.settings = settings;
     this.Message = Message;
-    this.ChainLink = ChainLink;
-    this.chainLinks = [];
-    this.chainStart = null;
-    this.chainEnd = null;
-    this.isConnected = false;
+    this.Subscriber = Subscriber;
     this.adapters = new Map();
   }
 
   /**
     @function log
-    Link the chain if not linked already.
+    Link the stream if not linked already.
     Compress parameters into an immutable Message package object
-    Push it to the start of the chain
+    Push it to the start of the stream
     @param logLevel {string} - logging level
     @param message {string|Error} - message to process
     @param args - message metadata
   **/
   log(logLevel, message, ...args) {
-    if (!this.isConnected) {
-      this.link();
-    }
-    this.chainStart.handle(new Message(logLevel, message, ...args));
+    const subscriberMessage = new Message(logLevel, message, ...args);
+    loggerStream.next(subscriberMessage);
   }
 
   /**
-    @function link
-    Connect each chainLink to a next one
-  **/
-  link() {
-    this.isConnected = true;
-    for (let i = 0; i < this.chainLinks.length - 1; i++) {
-      this.chainLinks[i].link(this.chainLinks[i + 1]);
-    }
-    if (this.chainStart === null) {
-      this.chainStart = this.chainLinks[0];
-      this.chainEnd = this.chainLinks[this.chainLinks.length - 1];
-    }
+   * Subsctibe to to the logger stream
+   * @param  {Object|Subscriber} subscriber a subscriber implementation instance
+   * @return {Object|Rx.Observable} observable object, getting events from the stream as they appear
+   */
+  subscribe(subscriber) {
+    return loggerStream.subscribe(message => subscriber.handle(message));
   }
 
   /**
-    @function push
-    Add a new chain link to the end of the execution chain
-    @param chainLink {Object} - chain link implementation
-    @return {number} - index of the chain link in the execution chain
-  **/
-  push(chainLink) {
-    assert(chainLink);
-    assert(chainLink.handle, 'Chain link must implement handle(message) function');
-    assert(chainLink.next, 'Chain link must implement next() function');
-    assert(chainLink.link, 'Chain link must implement a link(next) function');
-    const index = this.chainLinks.push(chainLink) - 1;
-    this.chainStart = this.chainLinks[0];
-    this.chainEnd = this.chainLinks[this.chainLinks.length - 1];
-    this.link();
-    return index;
+   * Get currect subscribers count
+   * @return {Number} current amount of subscribers to the loggerStream
+   */
+  get subscribersCount() {
+    return loggerStream.observers.length;
   }
 
   /**
@@ -131,10 +108,10 @@ class LoggerChain {
     @param adapterInstance {Object} - instance of an adapter
 
     Example:
-      const { chain } = require(..);
-      chain.bindAdapter('unicorn', new MyUnicorn(..));
+      const { stream } = require(..);
+      stream.bindAdapter('unicorn', new MyUnicorn(..));
 
-      const { unicorn, chain } = require(..);
+      const { unicorn, stream } = require(..);
       unicorn.yay() // unicorn is now defined
   **/
   bindAdapter(adapterName, adapterInstance) {
@@ -161,15 +138,31 @@ class LoggerChain {
 }
 
 /**
- * Configure and return a chain of processing a log message. It should be required on module launch.
+ * Unsubscribe all subscribers from current stream
+ */
+function disposeStream() {
+  if (loggerStream !== undefined) {
+    for (const subscriber of loggerStream.observers) {
+      subscriber.unsubscribe();
+    }
+  }
+}
+
+process.on('exit', disposeStream);
+process.on('SIGINT', disposeStream);
+process.on('SIGTERM', disposeStream);
+process.on('uncaughtException', disposeStream);
+
+/**
+ * Configure and return a stream of processing a log message. It should be required on module launch.
  * It sets up loggers, notifiers for bugs, and exposes the internal providers, abstracted.
  * If no parameter is provided, it will return already configured providers
  * @param  {Object}  [config] Configuration object required by the internal providers
- * @param  {Array}   [config.chainLinks] Array of instances of chainLinks
+ * @param  {Array}   [config.subscribers] Array of instances of subscribers
  * @param  {Object}  [config.adapters] Object with adapters to be exposed
- * @param  {boolean} [config.CONSOLE_LOGGING] Switches on/off the console logging chain
+ * @param  {boolean} [config.CONSOLE_LOGGING] Switches on/off the console logging stream
  * @param  {boolean} [config.MIN_LOG_LEVEL] Minimal log level for a message to be processed
- * @param  {boolean} [config.MIN_LOG_LEVEL_CONSOLE] Minimal log level for a message to be processed by console chain link (more prior over MIN_LOG_LEVEL)
+ * @param  {boolean} [config.MIN_LOG_LEVEL_CONSOLE] Minimal log level for a message to be processed by console stream link (more prior over MIN_LOG_LEVEL)
  * @param  {boolean} [config.DEFAULT_LOG_LEVEL] Fall back if a message does not have one
  * Note that this module can also be configured with environment variables.
  * Environment variables have higher priority over a settings object
@@ -180,11 +173,12 @@ module.exports = (config) => {
     return instance;
   }
 
-  const settings = Object.assign({}, config);
+  loggerStream = new Rx.ReplaySubject(isNaN(bufferSize) ? 1 : bufferSize);
 
+  const settings = Object.assign({}, config);
   // presets
   if (Array.isArray(settings.presets)) {
-    // a whole settings object is passed to initialize the chain links (if wrapped into a function)
+    // a whole settings object is passed to initialize the stream links (if wrapped into a function)
     const presetConfigs = preset(settings);
     // merging other preset-given configs
     Object.assign(settings, presetConfigs);
@@ -192,28 +186,29 @@ module.exports = (config) => {
 
   // pulling data from buffer
   let adapters = buffer.adapters;
-  const chainLinks = buffer.chainLinks;
+  const subscribers = buffer.subscribers;
 
-  const chain = new LoggerChain(settings);
-  instance = { chain };
+  const stream = new LoggerStream(settings);
+  instance = { stream };
 
-  // adding default Console chain link
-  const chainLinkIndex = chain.push(new ConsoleChainLink(settings));
-  chain.bindAdapter('logger', new Winston(chain, chainLinkIndex));
+  // adding default Console stream link
+  const consoleSubscriber = new ConsoleSubscriber(settings);
+  stream.subscribe(consoleSubscriber);
+  stream.bindAdapter('logger', new Winston(stream, consoleSubscriber));
 
-  // Custom chainLinks
-  for (const CustomChainLink of chainLinks) {
+  // Custom subscribers
+  for (const CustomSubscriber of subscribers) {
     // if constructor passed in the array
-    if (typeof CustomChainLink === 'function') {
-      chain.push(new CustomChainLink(settings));
-      // if a pre-configured chainLink with some link-specific settings
-    } else if (CustomChainLink !== null && typeof CustomChainLink === 'object') {
-      const chainLinkConfig = Object.assign({}, CustomChainLink.config, settings);
-      const ChainLinkClass = CustomChainLink.class;
-      chain.push(new ChainLinkClass(chainLinkConfig));
+    if (typeof CustomSubscriber === 'function') {
+      stream.subscribe(new CustomSubscriber(settings));
+      // if a pre-configured subscriber with some link-specific settings
+    } else if (CustomSubscriber !== null && typeof CustomSubscriber === 'object') {
+      const subscriberConfig = Object.assign({}, CustomSubscriber.config, settings);
+      const SubscriberClass = CustomSubscriber.class;
+      stream.subscribe(new SubscriberClass(subscriberConfig));
       // if a pre-configured object also exposes adapter
-      if (CustomChainLink.adapter !== null && typeof CustomChainLink.adapter === 'object') {
-        const adapter = CustomChainLink.adapter;
+      if (CustomSubscriber.adapter !== null && typeof CustomSubscriber.adapter === 'object') {
+        const adapter = CustomSubscriber.adapter;
         adapters = Object.assign({}, adapters, {
           [adapter.name]: adapter.class
         });
@@ -224,10 +219,11 @@ module.exports = (config) => {
   // adapter key-value objects: { name -> constructor  }
   if (adapters !== null && typeof adapters === 'object') {
     for (const adapterName of Object.keys(adapters)) {
-      chain.bindAdapter(adapterName, new adapters[adapterName](chain, settings));
+      stream.bindAdapter(adapterName, new adapters[adapterName](stream, settings));
     }
   }
+
   return instance;
 };
 
-module.exports.chainBuffer = buffer;
+module.exports.streamBuffer = buffer;

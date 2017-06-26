@@ -1,6 +1,6 @@
 const assert = require('assert');
 const sinon = require('sinon');
-const ConsoleLink = require('../../src/chainLinks/console-link');
+const ConsoleLink = require('../../src/subscribers/console-link');
 const Message = require('../../src/modules/message');
 
 describe('Console chain link ', () => {
@@ -31,9 +31,6 @@ describe('Console chain link ', () => {
     assert.equal(typeof consoleChain.isReady, 'function');
     assert.equal(typeof consoleChain.isEnabled, 'function');
     assert.equal(typeof consoleChain.handle, 'function');
-    assert.equal(typeof consoleChain.next, 'function');
-    assert.equal(typeof consoleChain.link, 'function');
-    assert.equal(consoleChain.nextLink, null);
     assert.deepEqual(consoleChain.settings, {});
   });
 
@@ -145,24 +142,6 @@ describe('Console chain link ', () => {
     const message = new Message('error');
     process.env.MIN_LOG_LEVEL = 'warn';
     consoleChain.handle(message);
-    assert(spy.called);
-  });
-
-  it('should not throw if next link does not exist', () => {
-    const chainLink = new ConsoleLink({});
-    chainLink.next();
-  });
-
-  it('should link a new chainLink', () => {
-    const chainLink = new ConsoleLink({});
-    const spy = sinon.spy(sinon.stub());
-    const mock = {
-      handle: spy
-    };
-    assert.equal(chainLink.nextLink, null);
-    chainLink.link(mock);
-    assert.equal(typeof chainLink.nextLink, 'object');
-    chainLink.next();
     assert(spy.called);
   });
 });

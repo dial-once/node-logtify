@@ -1,8 +1,13 @@
 const assert = require('assert');
 
+function loggingFunction(stream, loggingLevel) {
+  return (message, ...args) => {
+    stream.log(loggingLevel, message, ...args);
+  };
+}
 /**
   @class Winston
-  Adapter for the winston logger chain link.
+  Adapter for the winston logger subscriber.
   Exposes logger's main functions as if a standard winston module was used
   The list of functions:
   @function info - log message with an info log level
@@ -13,7 +18,7 @@ const assert = require('assert');
   @function verbose - log message with a verbose log level
   @function log - log message with a provided log level
   @function profile - profiling function
-  @constructor consumes the instance of a LoggerChain @class
+  @constructor consumes the instance of a LoggerStream @class
 **/
 class Winston {
   /**
@@ -21,18 +26,16 @@ class Winston {
     Construct the instance of a winston adapter
     Create main logging functions
     Each function has the following arguments:
-    @param chain {object} - an instance of a chain
-    @param chainLinkIndex {number} - index of a chain link this adapter is for
+    @param stream {object} - an instance of a stream
+    @param subscriber {object} - instance of a subscriber
   **/
-  constructor(chain, chainLinkIndex = -1) {
-    assert(chain);
-    this.chain = chain;
-    this.chainLinkIndex = chainLinkIndex;
+  constructor(stream, subscriber) {
+    assert(stream);
+    this.stream = stream;
+    this.winston = subscriber.winston;
     const loggingLevels = ['error', 'warn', 'info', 'debug', 'silly', 'verbose'];
     for (const loggingLevel of loggingLevels) {
-      this[loggingLevel] = (message, ...args) => {
-        this.chain.log(loggingLevel, message, ...args);
-      };
+      this[loggingLevel] = loggingFunction(this.stream, loggingLevel);
     }
   }
 
@@ -50,7 +53,7 @@ class Winston {
     @param args {Object} - message metadatas
   **/
   log(logLevel, message, ...args) {
-    this.chain.log(logLevel, message, ...args);
+    this.stream.log(logLevel, message, ...args);
   }
 
   /**
@@ -59,8 +62,7 @@ class Winston {
     @param label {string} - a unique profiling label
   **/
   profile(label) {
-    const winston = this.chain.chainLinks[this.chainLinkIndex].winston;
-    winston.profile(label);
+    this.winston.profile(label);
   }
 }
 
