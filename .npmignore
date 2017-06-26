@@ -4,8 +4,8 @@ coverage
 test
 .sonar
 .gitignore
-.jshintignore
-.jshintrc
+.eslintignore
+.eslintrc
 .DS_STORE
 .npmignore
 Makefile
