@@ -210,16 +210,28 @@ module.exports = (config) => {
       if (CustomSubscriber.adapter !== null && typeof CustomSubscriber.adapter === 'object') {
         const adapter = CustomSubscriber.adapter;
         adapters = Object.assign({}, adapters, {
-          [adapter.name]: adapter.class
+          [adapter.name]: {
+            class: adapter.class,
+            config: CustomSubscriber.config
+          }
         });
       }
     }
   }
-  // Custom adapters
-  // adapter key-value objects: { name -> constructor  }
+  /* Custom adapters
+     adapter key-value objects:
+     {
+      [name]: {
+        class: constructor,
+        config: { Object } // optional
+      }
+     }
+  */
   if (adapters !== null && typeof adapters === 'object') {
     for (const adapterName of Object.keys(adapters)) {
-      stream.bindAdapter(adapterName, new adapters[adapterName](stream, settings));
+      const AdapterClass = adapters[adapterName].class;
+      const adapterSettings = Object.assign({}, adapters[adapterName].config, settings);
+      stream.bindAdapter(adapterName, new AdapterClass(stream, adapterSettings));
     }
   }
 
