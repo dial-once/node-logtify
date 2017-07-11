@@ -32,7 +32,7 @@ class StreamBuffer {
       this.subscribers.push(CustomSubscriber);
       // if a pre-configured object also exposes adapter
       if (CustomSubscriber.adapter !== null && typeof CustomSubscriber.adapter === 'object') {
-        this.addAdapter(CustomSubscriber.adapter);
+        this.addAdapter(CustomSubscriber.adapter, CustomSubscriber.config);
       }
     }
   }
@@ -40,8 +40,9 @@ class StreamBuffer {
   /**
    * @function addAdapter - adds subscriber adapter to the buffer
    * @param adapter {object} - adapter object
+   * @param config {object} - config object for adapter. Optional
    */
-  addAdapter(adapter) {
+  addAdapter(adapter, config) {
     // Custom adapters
     // adapter key-value objects: { name -> constructor  }
     if (adapter !== null && typeof adapter === 'object') {
@@ -49,10 +50,11 @@ class StreamBuffer {
         assert(typeof adapter.name === 'string');
         assert(typeof adapter.class === 'function');
         Object.assign(this.adapters, {
-          [adapter.name]: adapter.class
+          [adapter.name]: {
+            class: adapter.class,
+            config
+          }
         });
-      } else {
-        Object.assign(this.adapters, adapter);
       }
     }
   }

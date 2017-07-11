@@ -86,7 +86,8 @@ describe('Logger stream ', () => {
   it('should support custom subscribers', () => {
     const { streamBuffer } = logtify;
     streamBuffer.addAdapter({
-      unicorn: WinstonAdapter
+      name: 'unicorn',
+      class: WinstonAdapter
     });
     streamBuffer.addSubscriber(ConsoleSubscriber);
     streamBuffer.addSubscriber(ConsoleSubscriber);
@@ -105,7 +106,8 @@ describe('Logger stream ', () => {
       class: WinstonAdapter
     });
     streamBuffer.addAdapter({
-      unicorn: WinstonAdapter
+      name: 'unicorn',
+      class: WinstonAdapter
     });
     const { stream, logger, unicorn } = logtify({});
     assert(stream);
@@ -116,10 +118,12 @@ describe('Logger stream ', () => {
   it('should be able to unbind adapter', () => {
     const { streamBuffer } = logtify;
     streamBuffer.addAdapter({
-      stream: WinstonAdapter
+      name: 'stream',
+      class: WinstonAdapter
     });
     streamBuffer.addAdapter({
-      unicorn: WinstonAdapter
+      name: 'unicorn',
+      class: WinstonAdapter
     });
     let { stream, unicorn } = logtify({});
     assert(stream);

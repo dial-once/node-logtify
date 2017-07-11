@@ -1,10 +1,11 @@
-const LoggerChain = require('../../src/index');
+const LoggerStream = require('../../src/index');
+const Subscriber = require('../../src/subscribers/console-link.js');
 const assert = require('assert');
 const sinon = require('sinon');
 
 describe('Winston adapter ', () => {
   it('should be initialized', () => {
-    const { logger } = LoggerChain();
+    const { logger } = LoggerStream();
     assert.equal(typeof logger, 'object');
     assert(logger.stream);
     assert.equal(typeof logger.info, 'function');
@@ -18,7 +19,7 @@ describe('Winston adapter ', () => {
   });
 
   it('should provide the functionality of a logger', () => {
-    const { logger } = LoggerChain();
+    const { logger } = LoggerStream();
     const spy = sinon.spy(logger.stream.log);
     logger.stream.log = spy;
     logger.info('[info] Hello world');
@@ -33,8 +34,73 @@ describe('Winston adapter ', () => {
   });
 
   it('should profile functions', () => {
-    const { logger } = LoggerChain();
+    const { logger } = LoggerStream();
     logger.profile('test');
     logger.profile('test');
+  });
+
+  it('should be manually configured if initialized before logtify', () => {
+    const streamBuffer = LoggerStream.streamBuffer;
+    class TestAdapter {
+      constructor(stream, settings) {
+        this.settings = settings;
+      }
+    }
+    streamBuffer.addAdapter({
+      name: 'test',
+      class: TestAdapter
+    }, { some: 'configs' });
+    const { test } = LoggerStream({ hello: 'world' });
+    assert(test);
+    assert.deepEqual(test.settings, { some: 'configs', hello: 'world' });
+  });
+
+  it('should be auto configured if initialized before logtify', () => {
+    const streamBuffer = LoggerStream.streamBuffer;
+    class TestAdapter {
+      constructor(stream, settings) {
+        this.settings = settings;
+      }
+    }
+    streamBuffer.addAdapter({
+      name: 'test',
+      class: TestAdapter
+    });
+    const { test } = LoggerStream({ hello: 'world' });
+    assert(test);
+    assert.deepEqual(test.settings, { hello: 'world' });
+  });
+
+  it('should be auto configured if initialized before logtify [via subscriber]', () => {
+    const streamBuffer = LoggerStream.streamBuffer;
+    class TestAdapter {
+      constructor(stream, settings) {
+        this.settings = settings;
+      }
+    }
+    streamBuffer.addSubscriber({
+      class: Subscriber,
+      config: { some: 'thing' },
+      adapter: {
+        name: 'test',
+        class: TestAdapter
+      }
+    });
+    const { test } = LoggerStream({ hello: 'world' });
+    assert(test);
+    assert.deepEqual(test.settings, { some: 'thing', hello: 'world' });
+  });
+
+  it('should be manually configured if initialized after logtify', () => {
+    class TestAdapter {
+      constructor(stream, settings) {
+        this.settings = settings;
+      }
+    }
+    const { stream } = LoggerStream({ one: 'two' });
+    stream.bindAdapter('custom', new TestAdapter(stream, { hello: 'everyone' }));
+    const { custom } = LoggerStream();
+    assert(custom);
+    assert.deepEqual(custom.settings, { hello: 'everyone' });
   });
 });
