@@ -1,6 +1,6 @@
 {
   "name": "logtify",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Logger based on the Chain of Responsibility pattern",
   "main": "src/index.js",
   "directories": {
