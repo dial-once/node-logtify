@@ -154,6 +154,7 @@ process.env.LOG_TIMESTAMP = 'true';
 process.env.LOG_ENVIRONMENT = 'true';
 process.env.LOG_LEVEL = 'true';
 process.env.LOG_REQID = 'true';
+process.env.LOG_CALLER_PREFIX = 'true';
 ```
 
 **Note!** that if the ``LOG_REQID`` is set to ``'true'``, it will still not log it (as seen from example above), unless it is provided in the ``message.meta``.
