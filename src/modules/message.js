@@ -33,6 +33,10 @@ class Message {
     this.callerModuleInfo = tracer.trace();
   }
 
+  shouldInclude(settings, prefixPart) {
+    return process.env[prefixPart] ? process.env[prefixPart] === 'true' : !!settings[prefixPart];
+  }
+
   /**
     @function getPrefix
     Create a prefix for a message based on which prefix data is enabled for logging
@@ -51,23 +55,15 @@ class Message {
   **/
   getPrefix(settings = {}, delimiter = ':') {
     const message = this.payload;
-    const includeTimestamp = process.env.LOG_TIMESTAMP ?
-      process.env.LOG_TIMESTAMP === 'true' : !!settings.LOG_TIMESTAMP;
-    const includeEnvironment = process.env.LOG_ENVIRONMENT ?
-      process.env.LOG_ENVIRONMENT === 'true' : !!settings.LOG_ENVIRONMENT;
-    const includeLogLevel = process.env.LOG_LEVEL ?
-      process.env.LOG_LEVEL === 'true' : !!settings.LOG_LEVEL;
-    const environment = process.env.NODE_ENV === undefined ?
-      'local' : process.env.NODE_ENV;
-    const includeCallerPrefix = process.env.LOG_CALLER_PREFIX ?
-      process.env.LOG_CALLER_PREFIX === 'true' : !!settings.LOG_CALLER_PREFIX;
+    const shouldInclude = this.shouldInclude.bind(this, settings);
+    const environment = process.env.NODE_ENV && process.env.NODE_ENV !== 'undefined' ? process.env.NODE_ENV : 'local';
     const prefix = {
-      timestamp: includeTimestamp ? `${new Date().toISOString()}${delimiter}` : '',
-      environment: includeEnvironment ? `${environment}${delimiter}` : '',
-      logLevel: includeLogLevel ? `${message.level.toUpperCase()}${delimiter}` : '',
+      timestamp: shouldInclude('LOG_TIMESTAMP') ? `${new Date().toISOString()}${delimiter}` : '',
+      environment: shouldInclude('LOG_ENVIRONMENT') ? `${environment}${delimiter}` : '',
+      logLevel: shouldInclude('LOG_LEVEL') ? `${message.level.toUpperCase()}${delimiter}` : '',
       reqId: ''
     };
-    if (includeCallerPrefix) {
+    if (shouldInclude('LOG_CALLER_PREFIX')) {
       Object.assign(prefix, {
         module: this.callerModuleInfo.module ? `${this.callerModuleInfo.module}${delimiter}` : '',
         function: this.callerModuleInfo.function ? `${this.callerModuleInfo.function}` : '',
@@ -75,8 +71,7 @@ class Message {
       });
     }
     if (message.meta.reqId) {
-      const includeReqId = process.env.LOG_REQID === 'true' || !!settings.LOG_REQID;
-      prefix.reqId = includeReqId ? `${message.meta.reqId}` : '';
+      prefix.reqId = shouldInclude('LOG_REQID') ? `${message.meta.reqId}` : '';
     }
     let isEmpty = true;
     for (const key in prefix) { // eslint-disable-line

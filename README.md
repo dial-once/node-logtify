@@ -157,6 +157,8 @@ process.env.LOG_REQID = 'true';
 process.env.LOG_CALLER_PREFIX = 'true';
 ```
 
+LOG_CALLER_PREFIX - enables/disables printing of additional prefix: `[project:module:function]` with information about the caller project
+
 **Note!** that if the ``LOG_REQID`` is set to ``'true'``, it will still not log it (as seen from example above), unless it is provided in the ``message.meta``.
 So, to include it, you should do the following:
 ```js
