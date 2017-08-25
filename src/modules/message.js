@@ -1,3 +1,5 @@
+const tracer = require('./tracer.js');
+
 /**
   @class Message
   Convert the given parameters into a correct message format
@@ -28,7 +30,11 @@ class Message {
       const metaData = metas.reduce((sum, next) => Object.assign({}, sum, next));
       Object.assign(this.payload.meta, metaData);
     }
-    this.prefix = null;
+    this.callerModuleInfo = tracer.trace();
+  }
+
+  shouldInclude(settings, prefixPart) {
+    return process.env[prefixPart] ? process.env[prefixPart] === 'true' : !!settings[prefixPart];
   }
 
   /**
@@ -39,6 +45,7 @@ class Message {
     - LOG_ENVIRONMENT {'true'|'false'} - include current environment into a message prefix
     - LOG_LEVEL {'true'|'false'} - include log level in UPPERCASE into a message prefix
     - LOG_REQID {'true'|'false'} - incldue a reqId into a message prefix
+    - LOG_CALLER_PREFIX {'true'|'false'} - incldue a caller prefix of type module:project:function
 
     reqId will be included only if provided in the message meta
 
@@ -47,32 +54,34 @@ class Message {
     @return {object} - Prefix for the log message. Or an empty string of no prefix data logging is enabled
   **/
   getPrefix(settings = {}, delimiter = ':') {
-    if (this.prefix === null) {
-      const message = this.payload;
-      const includeTimestamp = process.env.LOG_TIMESTAMP === 'true' || !!settings.LOG_TIMESTAMP;
-      const includeEnvironment = process.env.LOG_ENVIRONMENT === 'true' || !!settings.LOG_ENVIRONMENT;
-      const includeLogLevel = process.env.LOG_LEVEL === 'true' || !!settings.LOG_LEVEL;
-      const environment = process.env.NODE_ENV === 'undefined' ? 'local' : process.env.NODE_ENV;
-      this.prefix = {
-        timestamp: includeTimestamp ? `${new Date().toISOString()}${delimiter}` : '',
-        environment: includeEnvironment ? `${environment}${delimiter}` : '',
-        logLevel: includeLogLevel ? `${message.level.toUpperCase()}${delimiter}` : '',
-        reqId: ''
-      };
-      if (message.meta.reqId) {
-        const includeReqId = process.env.LOG_REQID === 'true' || !!settings.LOG_REQID;
-        this.prefix.reqId = includeReqId ? `${message.meta.reqId}` : '';
-      }
-      let isEmpty = true;
-      for (const key in this.prefix) { // eslint-disable-line
-        if (this.prefix[key] !== '') {
-          isEmpty = false;
-          break;
-        }
-      }
-      this.prefix.isEmpty = isEmpty;
+    const message = this.payload;
+    const shouldInclude = this.shouldInclude.bind(this, settings);
+    const environment = process.env.NODE_ENV && process.env.NODE_ENV !== 'undefined' ? process.env.NODE_ENV : 'local';
+    const prefix = {
+      timestamp: shouldInclude('LOG_TIMESTAMP') ? `${new Date().toISOString()}${delimiter}` : '',
+      environment: shouldInclude('LOG_ENVIRONMENT') ? `${environment}${delimiter}` : '',
+      logLevel: shouldInclude('LOG_LEVEL') ? `${message.level.toUpperCase()}${delimiter}` : '',
+      reqId: ''
+    };
+    if (shouldInclude('LOG_CALLER_PREFIX')) {
+      Object.assign(prefix, {
+        module: this.callerModuleInfo.module ? `${this.callerModuleInfo.module}${delimiter}` : '',
+        function: this.callerModuleInfo.function ? `${this.callerModuleInfo.function}` : '',
+        project: this.callerModuleInfo.project ? `${this.callerModuleInfo.project}${delimiter}` : ''
+      });
     }
-    return this.prefix;
+    if (message.meta.reqId) {
+      prefix.reqId = shouldInclude('LOG_REQID') ? `${message.meta.reqId}` : '';
+    }
+    let isEmpty = true;
+    for (const key in prefix) { // eslint-disable-line
+      if (prefix[key] !== '') {
+        isEmpty = false;
+        break;
+      }
+    }
+    prefix.isEmpty = isEmpty;
+    return prefix;
   }
 }
 

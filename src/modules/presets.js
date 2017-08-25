@@ -9,7 +9,8 @@ function configPrefix(include) {
     LOG_TIMESTAMP: include,
     LOG_ENVIRONMENT: include,
     LOG_LEVEL: include,
-    LOG_REQID: include
+    LOG_REQID: include,
+    LOG_CALLER_PREFIX: include
   };
 }
 
@@ -25,11 +26,13 @@ function applyPreset(preset) {
         return {
           CONSOLE_LOGGING: false,
           LOGENTRIES_LOGGING: true,
+          LOGSTASH_LOGGING: true,
           BUGSNAG_LOGGING: true
         };
       }
       return {
         CONSOLE_LOGGING: true,
+        LOGSTASH_LOGGING: false,
         LOGENTRIES_LOGGING: false,
         BUGSNAG_LOGGING: false
       };

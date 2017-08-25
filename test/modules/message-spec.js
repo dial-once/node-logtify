@@ -79,6 +79,7 @@ describe('Message class test', () => {
       assert.equal(message.payload.meta.something, 'else');
     });
   });
+
   describe('getPrefix() ', () => {
     before(() => {
       this.emptyPrefix = { timestamp: '', environment: '', logLevel: '', reqId: '', isEmpty: true };
@@ -89,6 +90,7 @@ describe('Message class test', () => {
       delete process.env.LOG_ENVIRONMENT;
       delete process.env.LOG_LEVEL;
       delete process.env.LOG_REQID;
+      delete process.env.LOG_CALLER_PREFIX;
     });
 
     afterEach(() => {
@@ -96,6 +98,7 @@ describe('Message class test', () => {
       delete process.env.LOG_ENVIRONMENT;
       delete process.env.LOG_LEVEL;
       delete process.env.LOG_REQID;
+      delete process.env.LOG_CALLER_PREFIX;
     });
 
     it('should return empty string if no envs provided', () => {
@@ -104,14 +107,14 @@ describe('Message class test', () => {
       assert.deepEqual(prefix, this.emptyPrefix);
     });
 
-    it('should return data according to settings [with env]timestamp]', () => {
+    it('should return data according to settings [with env] [timestamp]', () => {
       const message = new Message();
       process.env.LOG_TIMESTAMP = 'false';
       const prefix = message.getPrefix();
       assert.deepEqual(prefix, this.emptyPrefix);
     });
 
-    it('should return data according to settings [with env]timestamp]', () => {
+    it('should return data according to settings [with env] [timestamp]', () => {
       const message = new Message();
       process.env.LOG_TIMESTAMP = 'true';
       const prefix = message.getPrefix();
@@ -129,7 +132,7 @@ describe('Message class test', () => {
       const message = new Message();
       process.env.LOG_ENVIRONMENT = 'true';
       const prefix = message.getPrefix();
-      const environment = process.env.NODE_ENV === 'undefined' ? 'local' : process.env.NODE_ENV;
+      const environment = process.env.NODE_ENV && process.env.NODE_ENV !== 'undefined' ? process.env.NODE_ENV : 'local';
       const notEmptyPrefix = Object.assign({}, this.emptyPrefix, { environment: `${environment}:`, isEmpty: false });
       assert.deepEqual(prefix, notEmptyPrefix);
     });
@@ -182,13 +185,30 @@ describe('Message class test', () => {
       assert.deepEqual(prefix, notEmptyPrefix);
     });
 
-    it('should return data according to settings [settings]timestamp]', () => {
+    it('should return data according to settings [with env] [log caller prefix] [disabled]', () => {
+      const message = new Message();
+      const prefix = message.getPrefix();
+      assert(!{}.hasOwnProperty.call(prefix, 'module'));
+      assert(!{}.hasOwnProperty.call(prefix, 'function'));
+      assert(!{}.hasOwnProperty.call(prefix, 'project'));
+    });
+
+    it('should return data according to settings [with env] [log caller prefix] [enabled]', () => {
+      const message = new Message();
+      process.env.LOG_CALLER_PREFIX = 'true';
+      const prefix = message.getPrefix();
+      assert({}.hasOwnProperty.call(prefix, 'module'));
+      assert({}.hasOwnProperty.call(prefix, 'function'));
+      assert({}.hasOwnProperty.call(prefix, 'project'));
+    });
+
+    it('should return data according to settings [settings] [timestamp]', () => {
       const message = new Message();
       const prefix = message.getPrefix({ LOG_TIMESTAMP: false });
       assert.deepEqual(prefix, this.emptyPrefix);
     });
 
-    it('should return data according to settings [settings]timestamp]', () => {
+    it('should return data according to settings [settings] [timestamp]', () => {
       const message = new Message();
       const prefix = message.getPrefix({ LOG_TIMESTAMP: true });
       assert.notDeepEqual(prefix, this.emptyPrefix);
@@ -203,7 +223,7 @@ describe('Message class test', () => {
     it('should return data according to settings [settings] [environment]', () => {
       const message = new Message();
       const prefix = message.getPrefix({ LOG_ENVIRONMENT: true });
-      const environment = process.env.NODE_ENV === 'undefined' ? 'local' : process.env.NODE_ENV;
+      const environment = process.env.NODE_ENV && process.env.NODE_ENV !== 'undefined' ? process.env.NODE_ENV : 'local';
       const notEmptyPrefix = Object.assign({}, this.emptyPrefix, { environment: `${environment}:`, isEmpty: false });
       assert.deepEqual(prefix, notEmptyPrefix);
     });
@@ -242,18 +262,50 @@ describe('Message class test', () => {
     });
 
     it('should return data according to settings [settings] [reqId] [provided]', () => {
-      const message = new Message(null, 'Hello world', {
-        reqId: 'test'
-      });
+      const message = new Message(null, 'Hello world', { reqId: 'test' });
       const prefix = message.getPrefix({ LOG_REQID: true });
       const notEmptyPrefix = Object.assign({}, this.emptyPrefix, { reqId: 'test', isEmpty: false });
       assert.deepEqual(prefix, notEmptyPrefix);
     });
 
+    it('should return data according to settings [settings] [log caller prefix] [disabled]', () => {
+      const message = new Message();
+      const prefix = message.getPrefix({ LOG_CALLER_PREFIX: false });
+      assert(!{}.hasOwnProperty.call(prefix, 'module'));
+      assert(!{}.hasOwnProperty.call(prefix, 'function'));
+      assert(!{}.hasOwnProperty.call(prefix, 'project'));
+    });
+
+    it('should return data according to settings [settings] [log caller prefix] [enabled]', () => {
+      const message = new Message();
+      const prefix = message.getPrefix({ LOG_CALLER_PREFIX: true });
+      assert({}.hasOwnProperty.call(prefix, 'module'));
+      assert({}.hasOwnProperty.call(prefix, 'function'));
+      assert({}.hasOwnProperty.call(prefix, 'project'));
+    });
+
+    it('should use env prior to settings [env and settings] [log caller prefix] [enabled]', () => {
+      const message = new Message();
+      process.env.LOG_CALLER_PREFIX = 'true';
+      const prefix = message.getPrefix({ LOG_CALLER_PREFIX: false });
+      assert({}.hasOwnProperty.call(prefix, 'module'));
+      assert({}.hasOwnProperty.call(prefix, 'function'));
+      assert({}.hasOwnProperty.call(prefix, 'project'));
+    });
+
+    it('should use env prior to settings [env and settings] [log caller prefix] [disabled]', () => {
+      const message = new Message();
+      process.env.LOG_CALLER_PREFIX = 'false';
+      const prefix = message.getPrefix({ LOG_CALLER_PREFIX: true });
+      assert(!{}.hasOwnProperty.call(prefix, 'module'));
+      assert(!{}.hasOwnProperty.call(prefix, 'function'));
+      assert(!{}.hasOwnProperty.call(prefix, 'project'));
+    });
+
     it('should be able to change the delimiter', () => {
       const message = new Message(null, 'Hello world');
       const prefix = message.getPrefix({ LOG_ENVIRONMENT: true }, '*');
-      const environment = process.env.NODE_ENV === 'undefined' ? 'local' : process.env.NODE_ENV;
+      const environment = process.env.NODE_ENV && process.env.NODE_ENV !== 'undefined' ? process.env.NODE_ENV : 'local';
       const notEmptyPrefix = Object.assign({}, this.emptyPrefix, { environment: `${environment}*`, isEmpty: false });
       assert.deepEqual(prefix, notEmptyPrefix);
     });
