@@ -1,8 +1,9 @@
+require('../../src/env.js');
 const assert = require('assert');
 const Message = require('../../src/modules/message');
 
 describe('Message class test', () => {
-  describe('packMessage() ', () => {
+  describe('Message constructor', () => {
     it('should convert null message to default', () => {
       const message = new Message(null, null);
       assert(message);
@@ -31,16 +32,15 @@ describe('Message class test', () => {
     });
 
     it('should process message as error [Error]', () => {
-      const error = new Error('Hell world');
+      const error = new Error('Hello world');
       const message = new Message(null, error);
       assert(message);
       assert(message.payload);
       assert.equal(message.payload.level, 'info');
       assert.equal(message.payload.text, error.message);
-      assert.equal(message.payload.meta.stack, error.stack);
-      assert.equal(message.payload.meta.notify, true);
+      assert(message.payload.meta.error instanceof Error);
+      assert.equal(message.payload.meta.error.stack, error.stack);
       assert.equal(message.payload.meta.instanceId, process.env.HOSTNAME);
-      assert(message.payload.error instanceof Error);
     });
 
     it('should set log level to default if non given [env]', () => {
@@ -67,7 +67,7 @@ describe('Message class test', () => {
     });
 
     it('should overwrite existing metas with given [error]', () => {
-      const error = new Error('Hell world');
+      const error = new Error('Hello world');
       const message = new Message(null, error, {
         notify: false
       }, {
@@ -78,9 +78,68 @@ describe('Message class test', () => {
       assert.equal(message.payload.meta.notify, false);
       assert.equal(message.payload.meta.something, 'else');
     });
+
+    it('should convert errors in metadata approptiately [object]', () => {
+      const error = new Error('Hello world');
+      const message = new Message(null, 'Warning', { error });
+      assert(message);
+      assert(message.payload);
+      assert(message.payload.meta.error instanceof Error);
+      assert.equal(message.payload.text, 'Warning');
+      assert.equal(message.payload.meta.error.message, error.message);
+      assert(message.payload.meta.error.stack);
+    });
+
+    it('should convert errors in metadata [raw error]', () => {
+      const error = new Error('Hello world');
+      const message = new Message(null, 'Warning', error);
+      assert(message);
+      assert(message.payload);
+      assert(message.payload.meta.error instanceof Error);
+      assert.equal(message.payload.text, 'Warning');
+      assert.equal(message.payload.meta.error.message, error.message);
+      assert(message.payload.meta.error.stack);
+    });
   });
 
-  describe('getPrefix() ', () => {
+  describe('handleMetadata()', () => {
+    before(() => {
+      this.handleMetadata = new Message().handleMetadata;
+    });
+
+    it('should not process arrays', () => {
+      assert.deepEqual(this.handleMetadata(['one', 'two', 'three']), {});
+    });
+
+    it('should not convert primitives', () => {
+      const str = 'hello';
+      const num = 123213421;
+      const bool = true;
+      assert.equal(this.handleMetadata(str), str);
+      assert.equal(this.handleMetadata(num), num);
+      assert.equal(this.handleMetadata(bool), bool);
+    });
+
+    it('should not change object structure', () => {
+      const obj = {
+        one: 1,
+        two: 2,
+        three: {
+          one: 'one',
+          two: 'two',
+          three: 'three'
+        }
+      };
+      assert.deepEqual(this.handleMetadata(obj), obj);
+    });
+
+    it('should convert error to object', () => {
+      const error = new Error();
+      assert.deepEqual(this.handleMetadata(error), { error });
+    });
+  });
+
+  describe('getPrefix()', () => {
     before(() => {
       this.emptyPrefix = { timestamp: '', environment: '', logLevel: '', reqId: '', isEmpty: true };
     });
