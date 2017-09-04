@@ -13,20 +13,22 @@ This module uses RxJs library to implement a pub-sub model.
 
 ## Configuration
 Full list of env variables. Can be used in config object with the same name. Each of them is optional
+```
+LOG_TIMESTAMP = 'true'
+LOG_ENVIRONMENT = 'true'
+LOG_LEVEL = 'true'
+LOG_REQID = 'true' // only included when provided with metadata
+LOG_CALLER_PREFIX = 'true' // additional prefix with info about caller module/project/function
+JSONIFY = 'true' // converts metadata to json
+CONSOLE_LOGGING = 'true'
+LOGENTRIES_LOGGING = 'true'
+LOGSTASH_LOGGING = 'true'
+BUGSNAG_LOGGING = 'true'
 
-- __LOG_TIMESTAMP__ = 'true'
-- __LOG_ENVIRONMENT__ = 'true'
-- __LOG_LEVEL__ = 'true'
-- __LOG_REQID__ = 'true' // only included when provided with metadata
-- __LOG_CALLER_PREFIX__ = 'true' // additional prefix with info about caller module/project/function
-- __JSONIFY__ = 'true' // converts metadata to json
-- __CONSOLE_LOGGING__ = 'true'
-- __LOGENTRIES_LOGGING__ = 'true'
-- __LOGSTASH_LOGGING__ = 'true'
-- __BUGSNAG_LOGGING__ = 'true'
 
-
-- __LOGTIFY_BUFFER_SIZE = 1__ // amount of log messages that will be kept in buffer before disposed. Configurable __via env var only__
+// Configurable via env var only
+LOGTIFY_BUFFER_SIZE = 1 // amount of log messages that will be kept in buffer before disposed.
+```
 
 Environment variables have a higher priority over the settings object
 
