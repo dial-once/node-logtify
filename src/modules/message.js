@@ -1,4 +1,5 @@
 const tracer = require('./tracer.js');
+const serializeError = require('serialize-error');
 
 /**
   @class Message
@@ -58,6 +59,26 @@ class Message {
       Object.assign(result, metadata);
     }
     return result;
+  }
+
+  /**
+   * Get json interpretation of metadata
+   * @return {String} - jsonified metadata]
+   */
+  stringifyMetadata() {
+    if (!this.jsonMetadata) {
+      const jsonTemplate = {};
+      for (const key of Object.keys(this.payload.meta)) {
+        const value = this.payload.meta[key];
+        if (value instanceof Error) {
+          jsonTemplate[key] = serializeError(value);
+        } else {
+          jsonTemplate[key] = value;
+        }
+      }
+      this.jsonMetadata = JSON.stringify(jsonTemplate);
+    }
+    return this.jsonMetadata;
   }
 
   /**

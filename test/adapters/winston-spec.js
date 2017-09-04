@@ -22,12 +22,12 @@ describe('Winston adapter ', () => {
     const { logger } = LoggerStream();
     const spy = sinon.spy(logger.stream.log);
     logger.stream.log = spy;
-    logger.info('[info] Hello world');
-    logger.silly('[silly] Hello world');
-    logger.verbose('[verbose] Hello world');
-    logger.warn('[warn] Hello world');
-    logger.debug('[debug] Hello world', { lol: true }, { foo: 'bar' });
-    logger.error('[error] Hello world');
+    logger.info('Hello world');
+    logger.silly('Hello world');
+    logger.verbose('Hello world');
+    logger.warn('Hello world');
+    logger.debug('Hello world', { lol: true }, { foo: 'bar' });
+    logger.error('Hello world');
     logger.log('info', 'Hello world');
     assert.equal(spy.called, true);
     assert.equal(spy.callCount, 7);
