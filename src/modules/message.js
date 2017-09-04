@@ -42,7 +42,7 @@ class Message {
    * @return {Object|string|number|boolean}        - metadata, converted to object or primitive
    */
   handleMetadata(metadata) {
-    // if privimite value
+    // if primitive value
     if (['number', 'string', 'boolean'].includes(typeof metadata)) {
       return metadata;
     }
@@ -63,7 +63,7 @@ class Message {
 
   /**
    * Get json interpretation of metadata
-   * @return {String} - jsonified metadata]
+   * @return {String} - jsonified metadata
    */
   stringifyMetadata() {
     if (!this.jsonMetadata) {

@@ -79,7 +79,7 @@ describe('Message class test', () => {
       assert.equal(message.payload.meta.something, 'else');
     });
 
-    it('should convert errors in metadata approptiately [object]', () => {
+    it('should convert errors in metadata appropriately [object]', () => {
       const error = new Error('Hello world');
       const message = new Message(null, 'Warning', { error });
       assert(message);
