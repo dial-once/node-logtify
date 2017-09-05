@@ -1,5 +1,5 @@
 require('./env');
-const Rx = require('rxjs/Rx');
+const { ReplaySubject } = require('rxjs/ReplaySubject');
 const Message = require('./modules/message');
 const Subscriber = require('./modules/subscriber');
 const ConsoleSubscriber = require('./subscribers/console-link');
@@ -173,7 +173,7 @@ module.exports = (config) => {
     return instance;
   }
 
-  loggerStream = new Rx.ReplaySubject(isNaN(bufferSize) ? 1 : bufferSize);
+  loggerStream = new ReplaySubject(isNaN(bufferSize) ? 1 : bufferSize);
 
   const settings = Object.assign({}, config);
   // presets

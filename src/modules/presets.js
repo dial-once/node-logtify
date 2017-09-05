@@ -27,14 +27,16 @@ function applyPreset(preset) {
           CONSOLE_LOGGING: false,
           LOGENTRIES_LOGGING: true,
           LOGSTASH_LOGGING: true,
-          BUGSNAG_LOGGING: true
+          BUGSNAG_LOGGING: true,
+          JSONIFY: true
         };
       }
       return {
         CONSOLE_LOGGING: true,
         LOGSTASH_LOGGING: false,
         LOGENTRIES_LOGGING: false,
-        BUGSNAG_LOGGING: false
+        BUGSNAG_LOGGING: false,
+        JSONIFY: true
       };
     }
     case 'no-prefix': {
@@ -42,7 +44,11 @@ function applyPreset(preset) {
     }
     case 'prefix': {
       return configPrefix(true);
-    } default: {
+    }
+    case 'jsonify': {
+      return { JSONIFY: true };
+    }
+    default: {
       return {};
     }
   }

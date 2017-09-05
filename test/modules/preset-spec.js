@@ -43,5 +43,12 @@ describe('Presets', () => {
     assert.equal(result.LOGSTASH_LOGGING, false);
     assert.equal(result.LOGENTRIES_LOGGING, false);
     assert.equal(result.BUGSNAG_LOGGING, false);
+    assert.equal(result.JSONIFY, true);
+  });
+
+  it('should return a piece of config object [jsonify]', () => {
+    const result = preset({ presets: ['jsonify'] });
+    assert(result);
+    assert.equal(result.JSONIFY, true);
   });
 });

@@ -1,4 +1,5 @@
 const tracer = require('./tracer.js');
+const serializeError = require('serialize-error');
 
 /**
   @class Message
@@ -14,25 +15,78 @@ class Message {
       level: logLevel || 'info',
       text: message || '',
       meta: {
-        instanceId: process.env.HOSTNAME,
-        notify: true
+        instanceId: process.env.HOSTNAME
       }
     };
 
     // if error
     if (message instanceof Error) {
       this.payload.text = message.message || 'Error: ';
-      this.payload.meta.stack = message.stack;
-      this.payload.error = message;
+      Object.assign(this.payload.meta, { error: message });
     }
     // all metas are included as message meta
     if (metas.length > 0) {
-      const metaData = metas.reduce((sum, next) => Object.assign({}, sum, next));
+      // reduce does not process 1st element, but automatically includes it as [sum]
+      if (metas[0] instanceof Error) {
+        metas[0] = { error: metas[0] }; // eslint-disable-line no-param-reassign
+      }
+      const metaData = metas.reduce((sum, next) => Object.assign({}, sum, this.handleMetadata(next)));
       Object.assign(this.payload.meta, metaData);
     }
     this.callerModuleInfo = tracer.trace();
   }
 
+  /**
+   * Convert metadata to correct form based on type
+   * @param  {any} metadata  - values/objects/arrays to be used as metadata
+   * @return {Object|string|number|boolean}        - metadata, converted to object or primitive
+   */
+  handleMetadata(metadata) {
+    // if primitive value
+    if (['number', 'string', 'boolean'].includes(typeof metadata)) {
+      return metadata;
+    }
+
+    const result = {};
+    // do not support Arrays in metadata
+    if ([null, undefined].includes(metadata) || Array.isArray(metadata)) {
+      return result;
+    }
+
+    if (metadata instanceof Error) {
+      Object.assign(result, { error: metadata });
+    } else if (typeof metadata === 'object') {
+      Object.assign(result, metadata);
+    }
+    return result;
+  }
+
+  /**
+   * Get json interpretation of metadata
+   * @return {String} - jsonified metadata
+   */
+  stringifyMetadata() {
+    if (!this.jsonMetadata) {
+      const jsonTemplate = {};
+      for (const key of Object.keys(this.payload.meta)) {
+        const value = this.payload.meta[key];
+        if (value instanceof Error) {
+          jsonTemplate[key] = serializeError(value);
+        } else {
+          jsonTemplate[key] = value;
+        }
+      }
+      this.jsonMetadata = JSON.stringify(jsonTemplate);
+    }
+    return this.jsonMetadata;
+  }
+
+  /**
+   * Check if a prefix option is enabled by env variable/settings
+   * @param  {Object} settings   - logger settings
+   * @param  {string} prefixPart - name of the prefix part
+   * @return {boolean}           - true/false in case enabled/disabled
+   */
   shouldInclude(settings, prefixPart) {
     return process.env[prefixPart] ? process.env[prefixPart] === 'true' : !!settings[prefixPart];
   }

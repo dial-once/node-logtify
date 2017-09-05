@@ -5,18 +5,33 @@ const Message = require('../../src/modules/message');
 
 describe('Console chain link ', () => {
   before(() => {
+    this.MIN_LOG_LEVEL = process.env.MIN_LOG_LEVEL;
     delete process.env.MIN_LOG_LEVEL;
-    delete process.env.MIN_LOG_LEVEL_CONSOLE;
+    this.LOG_TIMESTAMP = process.env.LOG_TIMESTAMP;
     delete process.env.LOG_TIMESTAMP;
+    this.LOG_ENVIRONMENT = process.env.LOG_ENVIRONMENT;
     delete process.env.LOG_ENVIRONMENT;
+    this.LOG_LEVEL = process.env.LOG_LEVEL;
     delete process.env.LOG_LEVEL;
+    this.LOG_REQID = process.env.LOG_REQID;
     delete process.env.LOG_REQID;
+    this.JSONIFY = process.env.JSONIFY;
+    delete process.env.JSONIFY;
   });
 
   afterEach(() => {
     delete process.env.CONSOLE_LOGGING;
     delete process.env.MIN_LOG_LEVEL;
-    delete process.env.MIN_LOG_LEVEL_CONSOLE;
+    delete process.env.JSONIFY;
+  });
+
+  after(() => {
+    process.env.MIN_LOG_LEVEL = this.MIN_LOG_LEVEL;
+    process.env.LOG_TIMESTAMP = this.LOG_TIMESTAMP;
+    process.env.LOG_ENVIRONMENT = this.LOG_ENVIRONMENT;
+    process.env.LOG_LEVEL = this.LOG_LEVEL;
+    process.env.LOG_REQID = this.LOG_REQID;
+    process.env.JSONIFY = this.JSONIFY;
   });
 
   it('should not throw if no settings are given', () => {
@@ -142,6 +157,23 @@ describe('Console chain link ', () => {
     const message = new Message('error');
     process.env.MIN_LOG_LEVEL = 'warn';
     consoleChain.handle(message);
+    assert(spy.called);
+  });
+
+  it('should jsonify message metadata if configured [envs]', () => {
+    process.env.JSONIFY = 'true';
+    const consoleLink = new ConsoleLink({ CONSOLE_LOGGING: 'true', JSONIFY: false });
+    const message = new Message('error', 'Message', { hello: 'world', to: { who: 'to you' }, error: new Error() });
+    const spy = sinon.spy(message, 'stringifyMetadata');
+    consoleLink.handle(message);
+    assert(spy.called);
+  });
+
+  it('should jsonify message metadata if configured [settings]', () => {
+    const consoleLink = new ConsoleLink({ CONSOLE_LOGGING: 'true', JSONIFY: true });
+    const message = new Message('error', 'Message', { hello: 'world', to: { who: 'to you' } });
+    const spy = sinon.spy(message, 'stringifyMetadata');
+    consoleLink.handle(message);
     assert(spy.called);
   });
 });
