@@ -22,6 +22,7 @@ describe('Presets', () => {
     assert.equal(result.LOG_ENVIRONMENT, false);
     assert.equal(result.LOG_LEVEL, false);
     assert.equal(result.LOG_REQID, false);
+    assert.equal(result.LOG_CALLER_PREFIX, false);
   });
 
   it('should return a piece of a config object [prefix]', () => {
@@ -32,11 +33,22 @@ describe('Presets', () => {
     assert.equal(result.LOG_ENVIRONMENT, true);
     assert.equal(result.LOG_LEVEL, true);
     assert.equal(result.LOG_REQID, true);
+    assert.equal(result.LOG_CALLER_PREFIX, true);
   });
 
   it('should return a piece of a config object [dial-once]', () => {
     const result = preset({ presets: ['dial-once'] });
     assert(result);
-    assert(typeof result === 'object');
+    assert.equal(result.CONSOLE_LOGGING, true);
+    assert.equal(result.LOGSTASH_LOGGING, false);
+    assert.equal(result.LOGENTRIES_LOGGING, false);
+    assert.equal(result.BUGSNAG_LOGGING, false);
+    assert.equal(result.JSONIFY, true);
+  });
+
+  it('should return a piece of config object [jsonify]', () => {
+    const result = preset({ presets: ['jsonify'] });
+    assert(result);
+    assert.equal(result.JSONIFY, true);
   });
 });

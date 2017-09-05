@@ -65,10 +65,18 @@ class ConsoleLink extends Subscriber {
       const minLogLevel = this.getMinLogLevel(this.settings, this.name);
       if (this.logLevels.get(messageLevel) >= this.logLevels.get(minLogLevel)) {
         const prefix = message.getPrefix(this.settings);
-        const messageText = !prefix.isEmpty ?
-          `[${prefix.timestamp}${prefix.environment}${prefix.logLevel}${prefix.reqId}]${content.text}` :
-          content.text;
-        this.winston.log(messageLevel, messageText, content.meta);
+        let prefixText = !prefix.isEmpty ?
+          `[${prefix.timestamp}${prefix.environment}${prefix.logLevel}${prefix.reqId}] ` : '';
+        // if prefix contains these props, then caller module prefix was configured by settings/env
+        if ({}.hasOwnProperty.call(prefix, 'module') &&
+            {}.hasOwnProperty.call(prefix, 'function') &&
+            {}.hasOwnProperty.call(prefix, 'project')) {
+          prefixText += `[${prefix.project}${prefix.module}${prefix.function}] `;
+        }
+        const messageText = `${prefixText}${content.text}`;
+        const jsonify = process.env.JSONIFY ? process.env.JSONIFY === 'true' : !!this.settings.JSONIFY;
+        const metadata = jsonify ? message.stringifyMetadata() : content.meta;
+        this.winston.log(messageLevel, messageText, metadata);
       }
     }
   }
