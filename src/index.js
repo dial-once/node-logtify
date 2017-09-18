@@ -1,5 +1,4 @@
 require('./env');
-const { ReplaySubject } = require('rxjs/ReplaySubject');
 const Message = require('./modules/message');
 const Subscriber = require('./modules/subscriber');
 const ConsoleSubscriber = require('./subscribers/console-link');
@@ -7,11 +6,10 @@ const Winston = require('./adapters/winston');
 const StreamBuffer = require('./modules/stream-buffer');
 const preset = require('./modules/presets');
 const assert = require('assert');
+const EventEmitter = require('events');
 
 let instance;
-let loggerStream;
 const buffer = new StreamBuffer();
-const bufferSize = parseInt(process.env.LOGTIFY_BUFFER_SIZE, 10);
 
 /**
   @class LoggerStream
@@ -35,7 +33,7 @@ const bufferSize = parseInt(process.env.LOGTIFY_BUFFER_SIZE, 10);
   This is encouraged to make sure each stream link receives identical structure of the message
   @see packMessage @function documentation for detailed implementation
 **/
-class LoggerStream {
+class LoggerStream extends EventEmitter {
   /**
     @constructor
     @param settings {object} - stream configuration object
@@ -64,6 +62,7 @@ class LoggerStream {
     stream.unbindAdapter('logger');
   **/
   constructor(settings) {
+    super();
     this.settings = settings;
     this.Message = Message;
     this.Subscriber = Subscriber;
@@ -81,7 +80,7 @@ class LoggerStream {
   **/
   log(logLevel, message, ...args) {
     const subscriberMessage = new Message(logLevel, message, ...args);
-    loggerStream.next(subscriberMessage);
+    return this.emit('message', subscriberMessage);
   }
 
   /**
@@ -90,7 +89,7 @@ class LoggerStream {
    * @return {Object|Rx.Observable} observable object, getting events from the stream as they appear
    */
   subscribe(subscriber) {
-    return loggerStream.subscribe(message => subscriber.handle(message));
+    return this.on('message', message => subscriber.handle(message));
   }
 
   /**
@@ -98,7 +97,7 @@ class LoggerStream {
    * @return {Number} current amount of subscribers to the loggerStream
    */
   get subscribersCount() {
-    return loggerStream.observers.length;
+    return this.listenerCount('message');
   }
 
   /**
@@ -141,17 +140,16 @@ class LoggerStream {
  * Unsubscribe all subscribers from current stream
  */
 function disposeStream() {
-  if (loggerStream !== undefined) {
-    for (const subscriber of loggerStream.observers) {
-      subscriber.unsubscribe();
-    }
+  if (!instance) {
+    return;
   }
+  instance.stream.removeAllListeners('message');
 }
 
-process.on('exit', disposeStream);
-process.on('SIGINT', disposeStream);
-process.on('SIGTERM', disposeStream);
-process.on('uncaughtException', disposeStream);
+process.once('exit', disposeStream);
+process.once('SIGINT', disposeStream);
+process.once('SIGTERM', disposeStream);
+process.once('uncaughtException', disposeStream);
 
 /**
  * Configure and return a stream of processing a log message. It should be required on module launch.
@@ -172,8 +170,6 @@ module.exports = (config) => {
   if (!config && instance) {
     return instance;
   }
-
-  loggerStream = new ReplaySubject(isNaN(bufferSize) ? 1 : bufferSize);
 
   const settings = Object.assign({}, config);
   // presets
