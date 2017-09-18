@@ -24,10 +24,6 @@ CONSOLE_LOGGING = 'true'
 LOGENTRIES_LOGGING = 'true'
 LOGSTASH_LOGGING = 'true'
 BUGSNAG_LOGGING = 'true'
-
-
-// Configurable via env var only
-LOGTIFY_BUFFER_SIZE = 1 // amount of log messages that will be kept in buffer before disposed.
 ```
 
 Environment variables have a higher priority over the settings object

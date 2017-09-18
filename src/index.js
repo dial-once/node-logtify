@@ -67,6 +67,7 @@ class LoggerStream extends EventEmitter {
     this.Message = Message;
     this.Subscriber = Subscriber;
     this.adapters = new Map();
+    this.log = this.log.bind(this);
   }
 
   /**
