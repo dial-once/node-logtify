@@ -172,13 +172,15 @@ module.exports = (config) => {
     return instance;
   }
 
-  const settings = Object.assign({}, config);
+  disposeStream();
+
+  let settings = Object.assign({}, config);
   // presets
   if (Array.isArray(settings.presets)) {
     // a whole settings object is passed to initialize the stream links (if wrapped into a function)
     const presetConfigs = preset(settings);
     // merging other preset-given configs
-    Object.assign(settings, presetConfigs);
+    settings = Object.assign(presetConfigs, settings);
   }
 
   // pulling data from buffer

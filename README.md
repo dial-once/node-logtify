@@ -9,8 +9,6 @@
 npm i -S logtify
 ```
 
-This module uses RxJs library to implement a pub-sub model.
-
 ## Configuration
 Full list of env variables. Can be used in config object with the same name. Each of them is optional
 ```
