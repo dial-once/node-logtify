@@ -18,8 +18,14 @@ function configPrefix(include) {
 
 function getCallerAppVersion(pwd = __dirname) {
   try {
-    const callerModulePackageJSON = pwd.includes('node_modules') ?
-    `${pwd.split(`${path.sep}node_modules`)[0]}${path.sep}package.json` : '';
+    const callerModulePath = pwd.split(`${path.sep}node_modules`);
+    let callerModulePackageJSON = '';
+    // if contained node_modules
+    if (callerModulePath.length > 1) {
+      // part of the path before /node_modules
+      callerModulePackageJSON = path.normalize(`${callerModulePath[0]}/package.json`);
+    }
+
     if (callerModulePackageJSON) {
       const json = require(callerModulePackageJSON); // eslint-disable-line
       return json.version;
