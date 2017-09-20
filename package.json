@@ -1,6 +1,6 @@
 {
   "name": "logtify",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Logger based on the Chain of Responsibility pattern",
   "main": "src/index.js",
   "directories": {
@@ -21,7 +21,6 @@
   "homepage": "https://github.com/dial-once/node-logtify#readme",
   "dependencies": {
     "deep-freeze": "0.0.1",
-    "rxjs": "^5.4.1",
     "serialize-error": "^2.1.0",
     "winston": "^2.2.0"
   },

@@ -1,3 +1,5 @@
+const path = require('path');
+
 /**
   @function configPrefix
   return a piece of settings object, configured by a 'prefix' or 'no-prefix' presets
@@ -14,6 +16,25 @@ function configPrefix(include) {
   };
 }
 
+function getCallerAppVersion(pwd = __dirname) {
+  try {
+    const callerModulePath = pwd.split(`${path.sep}node_modules`);
+    let callerModulePackageJSON = '';
+    // if contained node_modules
+    if (callerModulePath.length > 1) {
+      // part of the path before /node_modules
+      callerModulePackageJSON = path.normalize(`${callerModulePath[0]}/package.json`);
+    }
+
+    if (callerModulePackageJSON) {
+      const json = require(callerModulePackageJSON); // eslint-disable-line
+      return json.version;
+    }
+  } catch (e) {} // eslint-disable-line
+  console.warn('Unable to fetch caller module\'s version');
+  return 'unknown';
+}
+
 /**
   @function applyPreset
   @param preset {string} - a key name of a preset
@@ -22,13 +43,15 @@ function configPrefix(include) {
 function applyPreset(preset) {
   switch (preset) {
     case 'dial-once': {
+      const appVersion = getCallerAppVersion();
       if (['staging', 'production'].includes(process.env.NODE_ENV)) {
         return {
           CONSOLE_LOGGING: false,
           LOGENTRIES_LOGGING: true,
           LOGSTASH_LOGGING: true,
           BUGSNAG_LOGGING: true,
-          JSONIFY: true
+          JSONIFY: true,
+          BUGSNAG_APP_VERSION: appVersion
         };
       }
       return {
@@ -36,7 +59,8 @@ function applyPreset(preset) {
         LOGSTASH_LOGGING: false,
         LOGENTRIES_LOGGING: false,
         BUGSNAG_LOGGING: false,
-        JSONIFY: true
+        JSONIFY: true,
+        BUGSNAG_APP_VERSION: appVersion
       };
     }
     case 'no-prefix': {
@@ -65,3 +89,5 @@ module.exports = (settings) => {
   }
   return presetConfigs;
 };
+
+module.exports.getCallerAppVersion = getCallerAppVersion;
