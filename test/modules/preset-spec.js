@@ -1,3 +1,5 @@
+const packageJSON = require('../../package.json');
+const path = require('path');
 const preset = require('../../src/modules/presets');
 const assert = require('assert');
 
@@ -44,11 +46,18 @@ describe('Presets', () => {
     assert.equal(result.LOGENTRIES_LOGGING, false);
     assert.equal(result.BUGSNAG_LOGGING, false);
     assert.equal(result.JSONIFY, true);
+    assert.equal(result.BUGSNAG_APP_VERSION, 'unknown');
   });
 
   it('should return a piece of config object [jsonify]', () => {
     const result = preset({ presets: ['jsonify'] });
     assert(result);
     assert.equal(result.JSONIFY, true);
+  });
+
+  it('should return correct app version', () => {
+    const projectRoot = path.posix.resolve(__dirname, '../../');
+    const appVersion = preset.getCallerAppVersion(path.normalize(`${projectRoot}/node_modules/node-logtify`));
+    assert.equal(packageJSON.version, appVersion);
   });
 });
