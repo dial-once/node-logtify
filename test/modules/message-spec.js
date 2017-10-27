@@ -10,7 +10,7 @@ describe('Message class test', () => {
       assert(message);
       assert(message.payload);
       assert.equal(message.payload.level, 'info');
-      assert.equal(message.payload.text, '');
+      assert.equal(message.payload.text, null);
       assert.equal(message.payload.meta.instanceId, process.env.HOSTNAME);
     });
 
@@ -19,7 +19,7 @@ describe('Message class test', () => {
       assert(message);
       assert(message.payload);
       assert.equal(message.payload.level, 'info');
-      assert.equal(message.payload.text, '');
+      assert.equal(message.payload.text, undefined);
       assert.equal(message.payload.meta.instanceId, process.env.HOSTNAME);
     });
 
@@ -38,7 +38,7 @@ describe('Message class test', () => {
       assert(message);
       assert(message.payload);
       assert.equal(message.payload.level, 'info');
-      assert.equal(message.payload.text, error.message);
+      assert.equal(message.payload.text, JSON.stringify(serializeError(error)));
       assert(message.payload.meta.error instanceof Error);
       assert.equal(message.payload.meta.error.stack, error.stack);
       assert.equal(message.payload.meta.instanceId, process.env.HOSTNAME);
@@ -124,6 +124,12 @@ describe('Message class test', () => {
       const message = new Message(null, object);
       const expectedObject = ['hello world', { one: { two: 2 } }, serializeError(object[object.length - 1])];
       assert.equal(message.jsonifyText(), JSON.stringify(expectedObject));
+    });
+
+    it('should jsonify error as a message', () => {
+      const error = new Error();
+      const message = new Message(null, error);
+      assert.equal(message.payload.text, JSON.stringify(serializeError(error)));
     });
   });
 

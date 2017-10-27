@@ -1,7 +1,6 @@
 const tracer = require('./tracer.js');
 const serializeError = require('serialize-error');
 
-
 function jsonify(obj) {
   if (!obj || typeof obj === 'string') return obj;
 
@@ -33,7 +32,7 @@ class Message {
     // if plain text
     this.payload = {
       level: logLevel || 'info',
-      text: message || '',
+      text: message,
       meta: {
         instanceId: process.env.HOSTNAME
       }
@@ -41,7 +40,7 @@ class Message {
 
     // if error
     if (message instanceof Error) {
-      this.payload.text = message.message || 'Error: ';
+      this.payload.text = JSON.stringify(serializeError(message));
       Object.assign(this.payload.meta, { error: message });
     }
     // all metas are included as message meta
