@@ -1,6 +1,26 @@
 const tracer = require('./tracer.js');
 const serializeError = require('serialize-error');
 
+
+function jsonify(obj) {
+  if (!obj || typeof obj === 'string') return obj;
+
+  const isArray = Array.isArray(obj);
+  const jsonTemplate = isArray ? [] : {};
+
+  if (isArray) {
+    for (const item of obj) {
+      jsonTemplate.push(item instanceof Error ? serializeError(item) : item);
+    }
+  } else {
+    for (const key of Object.keys(obj)) {
+      const value = obj[key];
+      jsonTemplate[key] = value instanceof Error ? serializeError(value) : value;
+    }
+  }
+  return jsonTemplate;
+}
+
 /**
   @class Message
   Convert the given parameters into a correct message format
@@ -63,22 +83,18 @@ class Message {
 
   /**
    * Get json interpretation of metadata
-   * @return {String} - jsonified metadata
+   * @return {Object} - jsonified metadata
    */
-  stringifyMetadata() {
-    if (!this.jsonMetadata) {
-      const jsonTemplate = {};
-      for (const key of Object.keys(this.payload.meta)) {
-        const value = this.payload.meta[key];
-        if (value instanceof Error) {
-          jsonTemplate[key] = serializeError(value);
-        } else {
-          jsonTemplate[key] = value;
-        }
-      }
-      this.jsonMetadata = JSON.stringify(jsonTemplate);
-    }
-    return this.jsonMetadata;
+  jsonifyMetadata() {
+    return jsonify(this.payload.meta);
+  }
+
+  /**
+   * Get string intepretation of text
+   * @return {String} - stringified text
+   */
+  jsonifyText() {
+    return JSON.stringify(jsonify(this.payload.text));
   }
 
   /**

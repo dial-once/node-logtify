@@ -73,9 +73,9 @@ class ConsoleLink extends Subscriber {
             {}.hasOwnProperty.call(prefix, 'project')) {
           prefixText += `[${prefix.project}${prefix.module}${prefix.function}] `;
         }
-        const messageText = `${prefixText}${content.text}`;
         const jsonify = process.env.JSONIFY ? process.env.JSONIFY === 'true' : !!this.settings.JSONIFY;
-        const metadata = jsonify ? message.stringifyMetadata() : content.meta;
+        const messageText = `${prefixText}${jsonify ? message.jsonifyText() : content.text}`;
+        const metadata = jsonify ? message.jsonifyMetadata() : content.meta;
         this.winston.log(messageLevel, messageText, metadata);
       }
     }
