@@ -2,7 +2,7 @@ const tracer = require('./tracer.js');
 const serializeError = require('serialize-error');
 
 function jsonify(obj) {
-  if (!obj || typeof obj === 'string') return obj;
+  if (!obj || typeof obj === 'string' || typeof obj === 'number') return obj;
 
   if (obj instanceof Error) return serializeError(obj);
 
@@ -34,7 +34,7 @@ class Message {
     const text = jsonify(message);
     this.payload = {
       level: logLevel || 'info',
-      text: (!text || typeof text === 'string') ? text : JSON.stringify(text),
+      text: (!text || typeof text === 'string' || typeof text === 'number') ? text : JSON.stringify(text),
       meta: {
         instanceId: process.env.HOSTNAME
       }
