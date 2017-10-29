@@ -112,7 +112,7 @@ describe('Message class test', () => {
       };
       const message = new Message(null, object);
       const expectedObject = Object.assign({}, object, { error: serializeError(object.error) });
-      assert.equal(message.jsonifyText(), JSON.stringify(expectedObject));
+      assert.equal(message.payload.text, JSON.stringify(expectedObject));
     });
 
     it('should jsonify arrays as message', () => {
@@ -123,7 +123,7 @@ describe('Message class test', () => {
       ];
       const message = new Message(null, object);
       const expectedObject = ['hello world', { one: { two: 2 } }, serializeError(object[object.length - 1])];
-      assert.equal(message.jsonifyText(), JSON.stringify(expectedObject));
+      assert.equal(message.payload.text, JSON.stringify(expectedObject));
     });
 
     it('should jsonify error as a message', () => {

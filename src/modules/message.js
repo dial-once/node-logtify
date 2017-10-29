@@ -4,6 +4,8 @@ const serializeError = require('serialize-error');
 function jsonify(obj) {
   if (!obj || typeof obj === 'string') return obj;
 
+  if (obj instanceof Error) return serializeError(obj);
+
   const isArray = Array.isArray(obj);
   const jsonTemplate = isArray ? [] : {};
 
@@ -29,18 +31,17 @@ function jsonify(obj) {
 **/
 class Message {
   constructor(logLevel, message, ...metas) {
-    // if plain text
+    const text = jsonify(message);
     this.payload = {
       level: logLevel || 'info',
-      text: message,
+      text: (!text || typeof text === 'string') ? text : JSON.stringify(text),
       meta: {
         instanceId: process.env.HOSTNAME
       }
     };
 
-    // if error
+    // if error we save original error to metadata to let other subscribers process it
     if (message instanceof Error) {
-      this.payload.text = JSON.stringify(serializeError(message));
       Object.assign(this.payload.meta, { error: message });
     }
     // all metas are included as message meta
@@ -84,16 +85,8 @@ class Message {
    * Get json interpretation of metadata
    * @return {Object} - jsonified metadata
    */
-  jsonifyMetadata() {
+  stringifyMetadata() {
     return jsonify(this.payload.meta);
-  }
-
-  /**
-   * Get string intepretation of text
-   * @return {String} - stringified text
-   */
-  jsonifyText() {
-    return JSON.stringify(jsonify(this.payload.text));
   }
 
   /**
