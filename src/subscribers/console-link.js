@@ -76,7 +76,7 @@ class ConsoleLink extends Subscriber {
         }
         const messageText = `${prefixText}${content.text}`;
         const jsonify = process.env.JSONIFY ? process.env.JSONIFY === 'true' : !!this.settings.JSONIFY;
-        const metadata = jsonify ? message.stringifyMetadata() : content.meta;
+        const metadata = jsonify ? message.jsonifyMetadata() : content.meta;
         this.winston.log(messageLevel, messageText, metadata);
       }
     }

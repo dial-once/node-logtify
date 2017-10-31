@@ -1,5 +1,6 @@
 const tracer = require('./tracer.js');
 const serializeError = require('serialize-error');
+const CircularJSON = require('circular-json');
 
 function jsonify(obj) {
   if (!obj || typeof obj === 'string' || typeof obj === 'number') return obj;
@@ -34,7 +35,7 @@ class Message {
     const text = jsonify(message);
     this.payload = {
       level: logLevel || 'info',
-      text: (!text || typeof text === 'string' || typeof text === 'number') ? text : JSON.stringify(text),
+      text: (!text || typeof text === 'string' || typeof text === 'number') ? text : CircularJSON.stringify(text),
       meta: {
         instanceId: process.env.HOSTNAME
       }
@@ -82,11 +83,19 @@ class Message {
   }
 
   /**
-   * Get json interpretation of metadata
+   * Get interpretation of metadata that can be safely converted into json
    * @return {Object} - jsonified metadata
    */
   stringifyMetadata() {
     return jsonify(this.payload.meta);
+  }
+
+  /**
+   * Get interpretation of metadata that can be safely converted into json
+   * @return {Object} - jsonified metadata
+   */
+  jsonifyMetadata() {
+    return this.stringifyMetadata();
   }
 
   /**
