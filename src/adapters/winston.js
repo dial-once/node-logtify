@@ -63,6 +63,7 @@ class Winston {
   **/
   profile(label) {
     this.winston.profile(label);
+    this.stream.log('info', label, { profiling: true });
   }
 }
 

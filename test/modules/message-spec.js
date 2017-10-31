@@ -1,6 +1,7 @@
 require('../../src/env.js');
 const assert = require('assert');
 const Message = require('../../src/modules/message');
+const serializeError = require('serialize-error');
 
 describe('Message class test', () => {
   describe('Message constructor', () => {
@@ -9,7 +10,7 @@ describe('Message class test', () => {
       assert(message);
       assert(message.payload);
       assert.equal(message.payload.level, 'info');
-      assert.equal(message.payload.text, '');
+      assert.equal(message.payload.text, null);
       assert.equal(message.payload.meta.instanceId, process.env.HOSTNAME);
     });
 
@@ -18,7 +19,7 @@ describe('Message class test', () => {
       assert(message);
       assert(message.payload);
       assert.equal(message.payload.level, 'info');
-      assert.equal(message.payload.text, '');
+      assert.equal(message.payload.text, undefined);
       assert.equal(message.payload.meta.instanceId, process.env.HOSTNAME);
     });
 
@@ -37,7 +38,7 @@ describe('Message class test', () => {
       assert(message);
       assert(message.payload);
       assert.equal(message.payload.level, 'info');
-      assert.equal(message.payload.text, error.message);
+      assert.equal(message.payload.text, JSON.stringify(serializeError(error)));
       assert(message.payload.meta.error instanceof Error);
       assert.equal(message.payload.meta.error.stack, error.stack);
       assert.equal(message.payload.meta.instanceId, process.env.HOSTNAME);
@@ -99,6 +100,36 @@ describe('Message class test', () => {
       assert.equal(message.payload.text, 'Warning');
       assert.equal(message.payload.meta.error.message, error.message);
       assert(message.payload.meta.error.stack);
+    });
+
+    it('should jsonify objects as message', () => {
+      const object = {
+        hello: 'world',
+        one: {
+          two: 2
+        },
+        error: new Error()
+      };
+      const message = new Message(null, object);
+      const expectedObject = Object.assign({}, object, { error: serializeError(object.error) });
+      assert.equal(message.payload.text, JSON.stringify(expectedObject));
+    });
+
+    it('should jsonify arrays as message', () => {
+      const object = [
+        'hello world',
+        { one: { two: 2 } },
+        new Error()
+      ];
+      const message = new Message(null, object);
+      const expectedObject = ['hello world', { one: { two: 2 } }, serializeError(object[object.length - 1])];
+      assert.equal(message.payload.text, JSON.stringify(expectedObject));
+    });
+
+    it('should jsonify error as a message', () => {
+      const error = new Error();
+      const message = new Message(null, error);
+      assert.equal(message.payload.text, JSON.stringify(serializeError(error)));
     });
   });
 
