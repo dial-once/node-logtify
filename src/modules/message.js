@@ -1,6 +1,27 @@
 const tracer = require('./tracer.js');
 const serializeError = require('serialize-error');
 
+function jsonify(obj) {
+  if (!obj || typeof obj === 'string' || typeof obj === 'number') return obj;
+
+  if (obj instanceof Error) return serializeError(obj);
+
+  const isArray = Array.isArray(obj);
+  const jsonTemplate = isArray ? [] : {};
+
+  if (isArray) {
+    for (const item of obj) {
+      jsonTemplate.push(item instanceof Error ? serializeError(item) : item);
+    }
+  } else {
+    for (const key of Object.keys(obj)) {
+      const value = obj[key];
+      jsonTemplate[key] = value instanceof Error ? serializeError(value) : value;
+    }
+  }
+  return jsonTemplate;
+}
+
 /**
   @class Message
   Convert the given parameters into a correct message format
@@ -10,18 +31,17 @@ const serializeError = require('serialize-error');
 **/
 class Message {
   constructor(logLevel, message, ...metas) {
-    // if plain text
+    const text = jsonify(message);
     this.payload = {
       level: logLevel || 'info',
-      text: message || '',
+      text: (!text || typeof text === 'string' || typeof text === 'number') ? text : JSON.stringify(text),
       meta: {
         instanceId: process.env.HOSTNAME
       }
     };
 
-    // if error
+    // if error we save original error to metadata to let other subscribers process it
     if (message instanceof Error) {
-      this.payload.text = message.message || 'Error: ';
       Object.assign(this.payload.meta, { error: message });
     }
     // all metas are included as message meta
@@ -63,22 +83,10 @@ class Message {
 
   /**
    * Get json interpretation of metadata
-   * @return {String} - jsonified metadata
+   * @return {Object} - jsonified metadata
    */
   stringifyMetadata() {
-    if (!this.jsonMetadata) {
-      const jsonTemplate = {};
-      for (const key of Object.keys(this.payload.meta)) {
-        const value = this.payload.meta[key];
-        if (value instanceof Error) {
-          jsonTemplate[key] = serializeError(value);
-        } else {
-          jsonTemplate[key] = value;
-        }
-      }
-      this.jsonMetadata = JSON.stringify(jsonTemplate);
-    }
-    return this.jsonMetadata;
+    return jsonify(this.payload.meta);
   }
 
   /**

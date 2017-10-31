@@ -59,7 +59,8 @@ class ConsoleLink extends Subscriber {
     @see LoggerStream message package object structure description
   **/
   handle(message) {
-    if (this.isReady() && this.isEnabled() && message) {
+    // profiling is blocked, because winstron.profile already printst he message to console
+    if (this.isReady() && this.isEnabled() && message && !message.payload.profiling) {
       const content = message.payload;
       const messageLevel = this.logLevels.has(content.level) ? content.level : this.logLevels.get('default');
       const minLogLevel = this.getMinLogLevel(this.settings, this.name);
