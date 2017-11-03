@@ -20,6 +20,7 @@
   },
   "homepage": "https://github.com/dial-once/node-logtify#readme",
   "dependencies": {
+    "circular-json": "^0.4.0",
     "deep-freeze": "0.0.1",
     "serialize-error": "^2.1.0",
     "winston": "^2.2.0"
