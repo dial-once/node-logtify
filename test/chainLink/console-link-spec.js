@@ -164,7 +164,7 @@ describe('Console chain link ', () => {
     process.env.JSONIFY = 'true';
     const consoleLink = new ConsoleLink({ CONSOLE_LOGGING: 'true', JSONIFY: false });
     const message = new Message('error', 'Message', { hello: 'world', to: { who: 'to you' }, error: new Error() });
-    const spy = sinon.spy(message, 'stringifyMetadata');
+    const spy = sinon.spy(message, 'jsonifyMetadata');
     consoleLink.handle(message);
     assert(spy.called);
   });
@@ -172,7 +172,7 @@ describe('Console chain link ', () => {
   it('should jsonify message metadata if configured [settings]', () => {
     const consoleLink = new ConsoleLink({ CONSOLE_LOGGING: 'true', JSONIFY: true });
     const message = new Message('error', 'Message', { hello: 'world', to: { who: 'to you' } });
-    const spy = sinon.spy(message, 'stringifyMetadata');
+    const spy = sinon.spy(message, 'jsonifyMetadata');
     consoleLink.handle(message);
     assert(spy.called);
   });

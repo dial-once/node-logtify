@@ -131,6 +131,18 @@ describe('Message class test', () => {
       const message = new Message(null, error);
       assert.equal(message.payload.text, JSON.stringify(serializeError(error)));
     });
+
+    it('should handle circular objects', () => {
+      const expectedObject = { array: [{ array: '~array' }, '~array~0', '~array~0'] };
+      const object = {
+        array: []
+      };
+      object.array.push(object);
+      object.array.push(object);
+      object.array.push(object);
+      const message = new Message(null, object);
+      assert.equal(message.payload.text, JSON.stringify(expectedObject));
+    });
   });
 
   describe('handleMetadata()', () => {
