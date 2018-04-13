@@ -1,6 +1,12 @@
 # Logtify
 
 [![CircleCI](https://circleci.com/gh/dial-once/node-logtify/tree/develop.svg?style=svg)](https://circleci.com/gh/dial-once/node-logtify/tree/develop)
+[![Sonar](http://proxy.dialonce.net/sonar/api/badges/gate?key=node-logtify)](http://sonar.dialonce.net/dashboard?id=node-logtify)
+[![Sonar](http://proxy.dialonce.net/sonar/api/badges/measure?key=node-logtify&metric=ncloc)](http://sonar.dialonce.net/dashboard?id=node-logtify)
+[![Sonar](http://proxy.dialonce.net/sonar/api/badges/measure?key=node-logtify&metric=coverage)](http://sonar.dialonce.net/dashboard?id=node-logtify)
+[![Sonar](http://proxy.dialonce.net/sonar/api/badges/measure?key=node-logtify&metric=code_smells)](http://proxy.dialonce.net/sonar/api/badges/measure?key=node-logtify&metric=coverage)
+[![Sonar](http://proxy.dialonce.net/sonar/api/badges/measure?key=node-logtify&metric=bugs)](http://sonar.dialonce.net/dashboard?id=node-logtify)
+[![Sonar](http://proxy.dialonce.net/sonar/api/badges/measure?key=node-logtify&metric=sqale_debt_ratio)](http://sonar.dialonce.net/dashboard?id=node-logtify)
 
 ### [Dev Tips](https://github.com/dial-once/node-logtify/wiki)
 
