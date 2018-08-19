@@ -1,17 +1,19 @@
 .PHONY: test
 
 deps:
-	npm i
+	npm install
+
+run:
+	npm run start
 
 lint:
-	node_modules/.bin/eslint .
-
-test:
-	make lint
-	make cover
+	npm run lint
 
 cover:
-	node_modules/.bin/istanbul cover  node_modules/.bin/_mocha -- test --recursive
+	npm run cover
+
+test:
+	npm run test
 
 sonar:
 	sed '/sonar.projectVersion/d' ./sonar-project.properties > tmp && mv tmp sonar-project.properties
@@ -22,6 +24,6 @@ ifdef CI_PULL_REQUEST
 	@sonar-scanner-2.8/bin/sonar-scanner -e -Dsonar.analysis.mode=preview -Dsonar.github.pullRequest=${shell basename $(CI_PULL_REQUEST)} -Dsonar.github.repository=$(REPO_SLUG) -Dsonar.github.oauth=$(GITHUB_TOKEN) -Dsonar.login=$(SONAR_LOGIN) -Dsonar.password=$(SONAR_PASS) -Dsonar.host.url=$(SONAR_HOST_URL)
 endif
 ifeq ($(CIRCLE_BRANCH),develop)
-	@sonar-scanner-2.8/bin/sonar-scanner -e -Dsonar.analysis.mode=publish -Dsonar.host.url=$(SONAR_HOST_URL) -Dsonar.login=$(SONAR_LOGIN) -Dsonar.password=$(SONAR_PASS)
+	@sonar-scanner-2.8/bin/sonar-runner -e -Dsonar.analysis.mode=publish -Dsonar.host.url=$(SONAR_HOST_URL) -Dsonar.login=$(SONAR_LOGIN) -Dsonar.password=$(SONAR_PASS)
 endif
 	rm -rf sonar-scanner-2.8 sonar-scanner-2.8.zip
