@@ -7,7 +7,10 @@
     "test": "test"
   },
   "scripts": {
-    "test": "make test"
+    "start": "node src/index.js",
+    "lint": "./node_modules/.bin/eslint .",
+    "cover": "CONSOLE_LOGGING=false node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha -- test --recursive --timeout=20000 --exit",
+    "test": "npm run lint && npm run cover"
   },
   "repository": {
     "type": "git",
@@ -26,13 +29,13 @@
     "winston": "^2.2.0"
   },
   "devDependencies": {
-    "eslint": "^3.16.1",
-    "eslint-config-airbnb": "^13.0.0",
-    "eslint-plugin-import": "^2.13.0",
-    "eslint-plugin-jsx-a11y": "^2.2.3",
-    "eslint-plugin-react": "^6.8.0",
-    "istanbul": "^0.4.5",
-    "mocha": "^5.2.0",
+    "eslint": "^4.9.0",
+    "eslint-config-airbnb": "^16.1.0",
+    "eslint-plugin-import": "^2.8.0",
+    "eslint-plugin-jsx-a11y": "^6.0.2",
+    "eslint-plugin-react": "^7.4.0",
+    "istanbul": "^1.1.0-alpha.1",
+    "mocha": "^4.0.1",
     "sinon": "^1.17.6"
   }
 }
