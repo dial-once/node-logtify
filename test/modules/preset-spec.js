@@ -1,7 +1,7 @@
-const packageJSON = require('../../package.json');
 const path = require('path');
-const preset = require('../../src/modules/presets');
 const assert = require('assert');
+const packageJSON = require('../../package.json');
+const preset = require('../../src/modules/presets');
 
 describe('Presets', () => {
   it('should return empty object if no presets provided / unsupported preset', () => {

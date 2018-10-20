@@ -1,7 +1,7 @@
 require('../../src/env.js');
+const serializeError = require('serialize-error');
 const assert = require('assert');
 const Message = require('../../src/modules/message');
-const serializeError = require('serialize-error');
 
 describe('Message class test', () => {
   describe('Message constructor', () => {
@@ -184,7 +184,13 @@ describe('Message class test', () => {
 
   describe('getPrefix()', () => {
     before(() => {
-      this.emptyPrefix = { timestamp: '', environment: '', logLevel: '', reqId: '', isEmpty: true };
+      this.emptyPrefix = {
+        timestamp: '',
+        environment: '',
+        logLevel: '',
+        reqId: '',
+        isEmpty: true
+      };
     });
 
     beforeEach(() => {

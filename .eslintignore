@@ -16,3 +16,4 @@
 /.sonar/**
 /logs/**
 /.idea/**
+/.nyc_out/**

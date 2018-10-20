@@ -1,7 +1,7 @@
-const LoggerStream = require('../../src/index');
-const Subscriber = require('../../src/subscribers/console-link.js');
 const assert = require('assert');
 const sinon = require('sinon');
+const LoggerStream = require('../../src/index');
+const Subscriber = require('../../src/subscribers/console-link.js');
 
 describe('Winston adapter ', () => {
   it('should be initialized', () => {
@@ -40,7 +40,7 @@ describe('Winston adapter ', () => {
   });
 
   it('should be manually configured if initialized before logtify', () => {
-    const streamBuffer = LoggerStream.streamBuffer;
+    const { streamBuffer } = LoggerStream;
     class TestAdapter {
       constructor(stream, settings) {
         this.settings = settings;
@@ -56,7 +56,7 @@ describe('Winston adapter ', () => {
   });
 
   it('should be auto configured if initialized before logtify', () => {
-    const streamBuffer = LoggerStream.streamBuffer;
+    const { streamBuffer } = LoggerStream;
     class TestAdapter {
       constructor(stream, settings) {
         this.settings = settings;
@@ -72,7 +72,7 @@ describe('Winston adapter ', () => {
   });
 
   it('should be auto configured if initialized before logtify [via subscriber]', () => {
-    const streamBuffer = LoggerStream.streamBuffer;
+    const { streamBuffer } = LoggerStream;
     class TestAdapter {
       constructor(stream, settings) {
         this.settings = settings;

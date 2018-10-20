@@ -1,6 +1,6 @@
-const tracer = require('./tracer.js');
 const serializeError = require('serialize-error');
 const CircularJSON = require('circular-json');
+const tracer = require('./tracer.js');
 
 function jsonify(obj) {
   if (!obj || typeof obj === 'string' || typeof obj === 'number') return obj;
@@ -24,12 +24,12 @@ function jsonify(obj) {
 }
 
 /**
-  @class Message
-  Convert the given parameters into a correct message format
-  @param logLevel {string} - a message log level (@see Subscriber @class for additional info)
-  @param message {Object|Error} - a message payload. Either a text string or an Error object
-  @param metas {Object} - metadata
-**/
+ * @class Message
+ * Convert the given parameters into a correct message format
+ * @param logLevel {string} - a message log level (@see Subscriber @class for additional info)
+ * @param message {Object|Error} - a message payload. Either a text string or an Error object
+ * @param metas {Object} - metadata
+ */
 class Message {
   constructor(logLevel, message, ...metas) {
     const text = jsonify(message);
@@ -109,7 +109,7 @@ class Message {
   }
 
   /**
-    @function getPrefix
+   * @function getPrefix
     Create a prefix for a message based on which prefix data is enabled for logging
     Configuration:
     - LOG_TIMESTAMP {'true'|'false'} - include timestamp ISO string into a message prefix
@@ -123,7 +123,7 @@ class Message {
     @param settings {Object} - stream settings. Falls back to {} if not given
     @param delimiter {string} - a character to split prefix parts. Falls back to ':'
     @return {object} - Prefix for the log message. Or an empty string of no prefix data logging is enabled
-  **/
+   */
   getPrefix(settings = {}, delimiter = ':') {
     const message = this.payload;
     const shouldInclude = this.shouldInclude.bind(this, settings);

@@ -1,8 +1,9 @@
+const assert = require('assert');
+
 const modulePath = './../src/index';
 const logtify = require('./../src/index');
 const ConsoleSubscriber = require('./../src/subscribers/console-link');
 const WinstonAdapter = require('./../src/adapters/winston');
-const assert = require('assert');
 
 describe('Logger stream ', () => {
   beforeEach(() => {
@@ -34,7 +35,7 @@ describe('Logger stream ', () => {
   it('should initialize when undefined config is given ', () => {
     const logtifyInstance = logtify(undefined);
     assert(logtifyInstance);
-    const stream = logtifyInstance.stream;
+    const { stream } = logtifyInstance;
     assert.equal(typeof stream, 'object');
     assert.equal(typeof stream.settings, 'object');
     assert.equal(typeof stream.Message, 'function');
@@ -46,7 +47,7 @@ describe('Logger stream ', () => {
   it('should initialize when null config is given ', () => {
     const logtifyInstance = logtify(null);
     assert(logtifyInstance);
-    const stream = logtifyInstance.stream;
+    const { stream } = logtifyInstance;
     assert.equal(typeof stream, 'object');
     assert.equal(typeof stream.settings, 'object');
     assert.equal(typeof stream.Message, 'function');
@@ -57,7 +58,7 @@ describe('Logger stream ', () => {
 
   it('should initialize when empty config is given', () => {
     const logtifyInstance = logtify({});
-    const stream = logtifyInstance.stream;
+    const { stream } = logtifyInstance;
     assert.equal(typeof stream, 'object');
     assert.equal(typeof stream.settings, 'object');
     assert.equal(typeof stream.Message, 'function');
@@ -129,8 +130,8 @@ describe('Logger stream ', () => {
     assert(stream);
     assert(unicorn);
     stream.unbindAdapter('unicorn');
-    unicorn = logtify().unicorn;
-    stream = logtify().stream;
+    unicorn = logtify().unicorn; // eslint-disable-line
+    stream = logtify().stream; // eslint-disable-line
     assert.equal(unicorn, undefined);
     assert.notEqual(stream, undefined);
   });
@@ -166,8 +167,11 @@ describe('Logger stream ', () => {
         this.settings = settings;
         this.utility = utility;
       }
+
       handle(message) { this.next(message); }
+
       next() {}
+
       link(next) { this.nextLink = next; }
     }
 

@@ -8,5 +8,6 @@ test
 .eslintrc
 .DS_STORE
 .npmignore
+.nyc_output
 Makefile
 sonar-project.properties

@@ -23,8 +23,8 @@ class Tracer {
       // So we check if the __dirname has node_modules inside to make sure it was called as a dependency
       // So if we have __dirname as /var/lib/MyAwesomeProject/node_modules/node-logtify/...
       // We eventually get MyAwesomeProject
-      const callerProject = __dirname.includes('node_modules') ?
-        __dirname.split(`${path.sep}node_modules${path.sep}`)[0].split(path.sep).pop() : '';
+      const callerProject = __dirname.includes('node_modules')
+        ? __dirname.split(`${path.sep}node_modules${path.sep}`)[0].split(path.sep).pop() : '';
       return {
         function: callerFunction || 'anonymous',
         module: callerModule,

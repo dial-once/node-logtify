@@ -28,6 +28,7 @@ describe('entry point', () => {
 
   it('should return a logger and a notifier (no params) without warning, already initialised', () => {
     const index = require('../src/index')();
+
     assert.notEqual(index.logger, undefined);
   });
 });

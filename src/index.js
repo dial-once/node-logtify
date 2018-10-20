@@ -1,18 +1,18 @@
 require('./env');
+const assert = require('assert');
+const EventEmitter = require('events');
 const Message = require('./modules/message');
 const Subscriber = require('./modules/subscriber');
 const ConsoleSubscriber = require('./subscribers/console-link');
 const Winston = require('./adapters/winston');
 const StreamBuffer = require('./modules/stream-buffer');
 const preset = require('./modules/presets');
-const assert = require('assert');
-const EventEmitter = require('events');
 
 let instance;
 const buffer = new StreamBuffer();
 
 /**
-  @class LoggerStream
+ * @class LoggerStream
   Logging stream. Consists of individual stream links, linked together.
 
   Exposes streamStart and streamEnd for stream modification outside of the module
@@ -32,10 +32,10 @@ const buffer = new StreamBuffer();
   Such message package object is frozen, meaning that it can not be modified.
   This is encouraged to make sure each stream link receives identical structure of the message
   @see packMessage @function documentation for detailed implementation
-**/
+  */
 class LoggerStream extends EventEmitter {
   /**
-    @constructor
+   * @constructor
     @param settings {object} - stream configuration object
     May contain the following parameters:
     - MIN_LOG_LEVEL {string}
@@ -60,7 +60,7 @@ class LoggerStream extends EventEmitter {
 
     And removed as the following:
     stream.unbindAdapter('logger');
-  **/
+   */
   constructor(settings) {
     super();
     this.settings = settings;
@@ -71,14 +71,19 @@ class LoggerStream extends EventEmitter {
   }
 
   /**
-    @function log
-    Link the stream if not linked already.
-    Compress parameters into an immutable Message package object
-    Push it to the start of the stream
-    @param logLevel {string} - logging level
-    @param message {string|Error} - message to process
-    @param args - message metadata
-  **/
+   * @function log
+   * Link the stream
+   * if not linked already.
+   * Compress parameters into an immutable Message package object
+   * Push it to the start of the stream
+   * @param logLevel {
+   *   string
+   * } - logging level
+   * @param message {
+   *  string | Error
+   * } - message to process
+   * @param args - message metadata
+   */
   log(logLevel, message, ...args) {
     const subscriberMessage = new Message(logLevel, message, ...args);
     return this.emit('message', subscriberMessage);
@@ -102,18 +107,18 @@ class LoggerStream extends EventEmitter {
   }
 
   /**
-    @function bindAdapter
-    Add a new adapter to the exposed module instance
-    @param adapterName {string} - label for the adapter property in the module instance
-    @param adapterInstance {Object} - instance of an adapter
-
-    Example:
-      const { stream } = require(..);
-      stream.bindAdapter('unicorn', new MyUnicorn(..));
-
-      const { unicorn, stream } = require(..);
-      unicorn.yay() // unicorn is now defined
-  **/
+   * @function bindAdapter
+   * Add a new adapter to the exposed module instance
+   * @param adapterName {string} - label for the adapter property in the module instance
+   * @param adapterInstance {Object} - instance of an adapter
+   *
+   * Example:
+   *  const { stream } = require(..);
+   *  stream.bindAdapter('unicorn', new MyUnicorn(..));
+   *
+   *  const { unicorn, stream } = require(..);
+   *  unicorn.yay() // unicorn is now defined
+   */
   bindAdapter(adapterName, adapterInstance) {
     assert(adapterName);
     assert(adapterInstance);
@@ -124,10 +129,10 @@ class LoggerStream extends EventEmitter {
   }
 
   /**
-    @function unbindAdapter
-    Remove adapter from the exposed module instance
-    @param adapterName
-  **/
+   * @function unbindAdapter
+   * Remove adapter from the exposed module instance
+   * @param adapterName
+   */
   unbindAdapter(adapterName) {
     assert(adapterName);
     if (this.adapters.has(adapterName)) {
@@ -184,8 +189,8 @@ module.exports = (config) => {
   }
 
   // pulling data from buffer
-  let adapters = buffer.adapters;
-  const subscribers = buffer.subscribers;
+  let { adapters } = buffer;
+  const { subscribers } = buffer;
 
   const stream = new LoggerStream(settings);
   instance = { stream };
@@ -207,7 +212,7 @@ module.exports = (config) => {
       stream.subscribe(new SubscriberClass(subscriberConfig));
       // if a pre-configured object also exposes adapter
       if (CustomSubscriber.adapter !== null && typeof CustomSubscriber.adapter === 'object') {
-        const adapter = CustomSubscriber.adapter;
+        const { adapter } = CustomSubscriber;
         adapters = Object.assign({}, adapters, {
           [adapter.name]: {
             class: adapter.class,

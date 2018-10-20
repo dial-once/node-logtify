@@ -17,6 +17,7 @@ class StreamBuffer {
     this.adapters = {};
     this.subscribers = [];
   }
+
   /**
    * @function addSubscriber - adds subscriber to the buffer
    * @param CustomSubscriber {function|object} - object or a function with the constructor of a subscriber

@@ -1,11 +1,11 @@
 const path = require('path');
 
 /**
-  @function configPrefix
-  return a piece of settings object, configured by a 'prefix' or 'no-prefix' presets
-  @param include {boolean} - the value of the object properties for message prefix configuration
-  @return {object} - a piece of settings, responsible for prefix configuration
-**/
+ * @function configPrefix
+ * return a piece of settings object, configured by a 'prefix' or 'no-prefix' presets
+ * @param include {boolean} - the value of the object properties for message prefix configuration
+ * @return {object} - a piece of settings, responsible for prefix configuration
+ * */
 function configPrefix(include) {
   return {
     LOG_TIMESTAMP: include,
@@ -31,15 +31,15 @@ function getCallerAppVersion(pwd = __dirname) {
       return json.version;
     }
   } catch (e) {} // eslint-disable-line
-  console.warn('Unable to fetch caller module\'s version');
+  console.warn('Unable to fetch caller module\'s version'); // eslint-disable-line
   return 'unknown';
 }
 
 /**
-  @function applyPreset
-  @param preset {string} - a key name of a preset
-  @return {object} - a piece of settings object based on the preset value
-**/
+ * @function applyPreset
+ * @param preset {string} - a key name of a preset
+ * @return {object} - a piece of settings object based on the preset value
+ * */
 function applyPreset(preset) {
   switch (preset) {
     case 'dial-once': {
@@ -79,9 +79,9 @@ function applyPreset(preset) {
 }
 
 /**
-  @param settings {Object} - chain settings
-  @return settings object per the given presets
-**/
+ * @param settings {Object} - chain settings
+ * @return settings object per the given presets
+ * */
 module.exports = (settings) => {
   const presetConfigs = {};
   for (const preset of settings.presets) {
